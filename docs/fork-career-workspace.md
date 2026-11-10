@@ -53,3 +53,9 @@ New source is staged in the fork first. Feature proposals upstream follow real t
 ## Local branding
 
 CareerAI names this private fork in the app, sign-in/admin pages, browser titles and connector descriptions. The upstream project and release notices retain Dossier attribution. Existing domains, cookie names, environment variables, database/export formats, OAuth scopes and MCP tool identifiers remain compatible.
+
+## Moving the private host to a new domain
+
+Set the registry origin, gateway PUBLIC_ORIGIN and each account DOSSIER_PUBLIC_URL to the same HTTPS origin. Preserve existing account secrets, password revisions, token storage and Google/provider settings. Add the new Google OAuth callback to the existing Cloud client before switching.
+
+The optional registry `legacyOrigins` list retains previous HTTPS hostnames. Normal pages redirect to the primary address, preserving the path and query. The old `/api/mcp` endpoint forwards to the same authenticated gateway with the canonical Host header so existing bearer clients continue working while their URLs are updated. Native OAuth clients should use the new issuer and endpoint. These routes survive account operations that regenerate Compose. Keep the old DNS records and TLS routing while old links are in use.

@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import control
+import manage
 
 
 class AccountControlTests(unittest.TestCase):
@@ -40,6 +41,35 @@ class AccountControlTests(unittest.TestCase):
         self.config["users"][0]["role"] = "user"
         with self.assertRaises(PermissionError):
             control.operate({**self.payload, "role": "admin"}, self.config)
+
+
+class DomainRoutingTests(unittest.TestCase):
+    def setUp(self):
+        self.config = {"origin": "https://career.example.com", "proxyNetwork": "proxy", "users": []}
+
+    def test_existing_installs_have_no_alias_routes(self):
+        labels = manage.compose_config(self.config)["services"]["gateway"]["labels"]
+        self.assertFalse(any("legacy" in key for key in labels))
+        self.assertEqual(labels["traefik.http.routers.dossier-accounts.rule"], "Host(`career.example.com`)")
+
+    def test_browser_redirects_and_bearer_routes_survive_account_changes(self):
+        self.config["legacyOrigins"] = ["https://old.example.com"]
+        initial = manage.compose_config(self.config)
+        self.config["users"] = [{"username": "alice"}]
+        updated = manage.compose_config(self.config)
+        labels = updated["services"]["gateway"]["labels"]
+        self.assertEqual(labels, initial["services"]["gateway"]["labels"])
+        self.assertEqual(labels["traefik.http.middlewares.dossier-legacy-0-redirect.redirectregex.replacement"], "https://career.example.com/$${1}")
+        self.assertIn("Path(`/api/mcp`)", labels["traefik.http.routers.dossier-legacy-0-mcp.rule"])
+        self.assertGreater(int(labels["traefik.http.routers.dossier-legacy-0-mcp.priority"]), int(labels["traefik.http.routers.dossier-legacy-0-web.priority"]))
+        self.assertEqual(labels["traefik.http.middlewares.dossier-legacy-0-forward.headers.customrequestheaders.Host"], "career.example.com")
+        self.assertNotIn("ports", updated["services"]["app-alice"])
+        self.assertEqual(updated["services"]["app-alice"]["networks"], ["account-alice"])
+
+    def test_aliases_cannot_inject_routes_or_redirect_back_to_themselves(self):
+        for value in [["http://old.example.com"], ["https://old.example.com/path"], [self.config["origin"]], ["https://a.example.com"] * 2, "https://old.example.com", [None]]:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                manage.compose_config({**self.config, "legacyOrigins": value})
 
 
 if __name__ == "__main__":

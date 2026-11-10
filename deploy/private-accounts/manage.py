@@ -92,6 +92,37 @@ def compose_config(config):
             "interval": "30s", "timeout": "5s", "start_period": "15s", "retries": 3,
         },
     }
+    # Keep bookmarked pages and existing bearer-token clients working after a
+    # domain move, including when account management regenerates this file.
+    legacy_origins = config.get("legacyOrigins", [])
+    if not isinstance(legacy_origins, list) or len(legacy_origins) > 5:
+        raise ValueError("At most five previous HTTPS origins are supported")
+    for index, previous in enumerate(legacy_origins):
+        if not isinstance(previous, str) or not re.fullmatch(r"https://[a-z0-9.-]+", previous) or previous == config["origin"] or previous in legacy_origins[:index]:
+            raise ValueError("Previous origins must be distinct HTTPS domain names")
+        previous_host = previous.removeprefix("https://")
+        name = f"dossier-legacy-{index}"
+        labels = gateway["labels"]
+        for suffix in ("web", "mcp"):
+            router = f"traefik.http.routers.{name}-{suffix}"
+            labels.update({
+                f"{router}.rule": f"Host(`{previous_host}`)",
+                f"{router}.entrypoints": "websecure",
+                f"{router}.tls": "true",
+                f"{router}.tls.certresolver": "mytlschallenge",
+                f"{router}.service": "dossier-accounts",
+                f"{router}.priority": "200" if suffix == "mcp" else "100",
+                f"{router}.middlewares": f"{name}-forward" if suffix == "mcp" else f"{name}-redirect",
+            })
+        labels[f"traefik.http.routers.{name}-mcp.rule"] += " && (Path(`/api/mcp`) || PathPrefix(`/api/mcp/`))"
+        labels.update({
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.regex": f"^https://{re.escape(previous_host)}/(.*)$",
+            # Compose reduces $$ to $, preserving Traefik's capture reference.
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.replacement": f"{config['origin']}/$${{1}}",
+            f"traefik.http.middlewares.{name}-redirect.redirectregex.permanent": "false",
+            f"traefik.http.middlewares.{name}-forward.headers.customrequestheaders.Host": host,
+            f"traefik.http.middlewares.{name}-forward.headers.customrequestheaders.X-Forwarded-Host": host,
+        })
     services["gateway"] = gateway
     # Disabled accounts retain their backend/data for recovery; gateway refuses them.
     for user in config["users"]:
