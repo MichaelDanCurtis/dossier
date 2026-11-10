@@ -1,7 +1,7 @@
 // What can score postings (#274): the AI model in Settings → AI provider,
 // or TypeSafe's Jev. Shared by the server and Settings → Scoring.
 
-export const SCORERS = ["AI", "JEV"] as const;
+export const SCORERS = ["AI", "JEV", "OPENAI_DECISIONS"] as const;
 export type Scorer = (typeof SCORERS)[number];
 
 /** Like the job sources' keys: saved here, from DOSSIER_TYPESAFE_KEY, missing, or saved under another DOSSIER_SECRET. */
@@ -20,6 +20,11 @@ export const SCORER_INFO: Record<Scorer, { name: string; description: string; ta
     name: "Jev by TypeSafe",
     description: "A model made for quick judgments. It answers questions about the posting, and Dossier builds the score and the reasons from the posting's own lines.",
     tag: "Needs a TypeSafe key",
+  },
+  OPENAI_DECISIONS: {
+    name: "OpenAI Decisions",
+    description: "GPT-6 Luna evaluates the posting against your profile using a scoring rubric. Dossier builds reasons from the posting’s own lines.",
+    tag: "Needs an OpenAI API key",
   },
 };
 

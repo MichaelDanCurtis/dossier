@@ -66,3 +66,18 @@ next-env.d.ts
 desktop/**/.yarn
 desktop/**/node_modules
 desktop/**/test-results
+
+# Optional private-account companion: generated runtime and build files
+/deploy/private-accounts/node_modules/
+/deploy/private-accounts/__pycache__/
+/deploy/private-accounts/test/__pycache__/
+/deploy/private-accounts/state/
+/deploy/private-accounts/secrets/
+/deploy/private-accounts/credentials/
+/deploy/private-accounts/backups/
+/deploy/private-accounts/control/
+/deploy/private-accounts/integration/
+/deploy/private-accounts/.docker-control/
+/deploy/private-accounts/.provision.lock
+/deploy/private-accounts/docker-compose.yml
+/deploy/private-accounts/deployment-source.zip

@@ -12,7 +12,7 @@ import { Card } from "@/components/ui/card";
 import { SCORER_INFO, SCORERS, TYPESAFE_KEY_URL, type Scorer, type ScoringView } from "@/lib/scoring/scorers";
 import { cn } from "@/lib/cn";
 
-import { saveScorer, saveTypesafeKey, testJev } from "./actions";
+import { saveScorer, saveTypesafeKey, saveOpenaiDecisionsKey, testJev, testOpenaiDecisions } from "./actions";
 import { SettingsSectionIntro } from "./settings-screen";
 
 type Connection =
@@ -44,13 +44,13 @@ export function ScoringSection({ initial }: { initial: ScoringView }) {
 
   const saveKey = async (change: { action: "set"; value: string } | { action: "clear" }) => {
     setConnection({ status: "untested" });
-    return apply(toastResult(await track(saveTypesafeKey({ change }))));
+    return apply(toastResult(await track(view.scorer === "OPENAI_DECISIONS" ? saveOpenaiDecisionsKey({ change }) : saveTypesafeKey({ change }))));
   };
 
   const test = async () => {
     if (connection.status === "testing") return;
     setConnection({ status: "testing" });
-    const result = await testJev({});
+    const result = await (view.scorer === "OPENAI_DECISIONS" ? testOpenaiDecisions({}) : testJev({}));
     if (!result.ok) setConnection({ status: "failed", message: result.error });
     else if (result.data.connected) setConnection({ status: "connected", model: result.data.model, seconds: result.data.seconds });
     else setConnection({ status: "failed", message: result.data.message });
@@ -93,31 +93,31 @@ export function ScoringSection({ initial }: { initial: ScoringView }) {
         ))}
       </RadioGroup.Root>
 
-      {view.scorer === "JEV" && (
+      {(view.scorer === "JEV" || view.scorer === "OPENAI_DECISIONS") && (
         <>
           <p role="note" className="rounded-card bg-warning-surface px-4 py-3 text-meta text-warning">
-            Each posting you score goes to TypeSafe with your profile, without your name or contact details. Jev reads English best: postings in other languages are
-            judged less well.
+            {view.scorer === "OPENAI_DECISIONS" ? "Each posting you score goes to OpenAI with your profile evidence, without your name or contact fields. OpenAI API usage is billed to your own key. Scores follow a rubric; review the reasons and gaps before relying on them." : "Each posting you score goes to TypeSafe with your profile, without your name or contact details. Jev reads English best: postings in other languages are judged less well."}
           </p>
 
           <Card className="flex flex-col gap-5">
             <KeyField
-              label="TypeSafe key"
+              key={view.scorer}
+              label={view.scorer === "OPENAI_DECISIONS" ? "OpenAI API key for Decisions" : "TypeSafe key"}
               keyState={view.keyState}
-              envName="DOSSIER_TYPESAFE_KEY"
-              getKey={{ href: TYPESAFE_KEY_URL, text: "the TypeSafe console" }}
+              envName={view.scorer === "OPENAI_DECISIONS" ? "DOSSIER_OPENAI_DECISIONS_KEY" : "DOSSIER_TYPESAFE_KEY"}
+              getKey={view.scorer === "OPENAI_DECISIONS" ? { href: "https://platform.openai.com/api-keys", text: "the OpenAI platform" } : { href: TYPESAFE_KEY_URL, text: "the TypeSafe console" }}
               onSave={saveKey}
             />
             <div className="flex flex-wrap items-center gap-3.5 pt-1">
               <Button variant="secondary" onClick={() => void test()} disabled={connection.status === "testing"}>
                 {connection.status === "testing" ? "Testing…" : "Test connection"}
               </Button>
-              <ConnectionStatus connection={connection} />
+              <ConnectionStatus connection={connection} provider={view.scorer === "OPENAI_DECISIONS" ? "OpenAI Decisions" : "Jev"} />
             </div>
           </Card>
 
           <p className="text-sm text-muted">
-            Jev&apos;s scores and your AI model&apos;s aren&apos;t on the same scale. If the job agent queues too many postings or too few, change its minimum score in{" "}
+            Different scorers can produce different scores. If the job agent queues too many postings or too few, change its minimum score in{" "}
             <Link href="/settings?section=agent" className="underline underline-offset-2 hover:text-ink">
               Settings → Job agent
             </Link>
@@ -129,14 +129,14 @@ export function ScoringSection({ initial }: { initial: ScoringView }) {
   );
 }
 
-function ConnectionStatus({ connection }: { connection: Connection }) {
+function ConnectionStatus({ connection, provider }: { connection: Connection; provider: string }) {
   const [dot, text, message] =
     connection.status === "connected"
       ? ["bg-success", "text-success", `Connected · ${connection.model} answered in ${connection.seconds.toLocaleString("en-US")} s`]
       : connection.status === "failed"
         ? ["bg-error", "text-error", connection.message]
         : connection.status === "testing"
-          ? ["bg-status-offer", "text-muted", "Asking Jev one short question…"]
+          ? ["bg-status-offer", "text-muted", `Asking ${provider} one short question…`]
           : ["bg-faint", "text-muted", "Not tested since your last change · a test costs a few dozen tokens"];
   return (
     <p role="status" className={cn("flex items-center gap-2 text-control", text)}>

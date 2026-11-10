@@ -69,6 +69,7 @@ describe("stored settings", () => {
       arbeitsagenturAcceptedAt: null,
       scorer: null,
       typesafeKeyEnc: null,
+      openaiDecisionsKeyEnc: null,
       agentEnabled: false,
       agentHour: 7,
       agentMinScore: 70,

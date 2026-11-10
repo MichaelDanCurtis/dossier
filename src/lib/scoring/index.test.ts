@@ -19,8 +19,10 @@ vi.mock("@/lib/ai", () => ({ getAiProvider: async () => state.provider }));
 vi.mock("@/lib/ai/task-options", () => ({ loadTaskOptions: async () => ({ creativity: "BALANCED", strict: true, language: null }) }));
 vi.mock("@/lib/usage-data", () => ({ recordUsage: vi.fn() }));
 vi.mock("./jev", () => ({ scoreWithJev: vi.fn(async () => ({ data: { score: 80, reasons: ["Covers: Figma"], redFlags: [] }, scoredWith: "score-posting-jev@1 (jev-1.14.0)" })) }));
+vi.mock("./decisions", () => ({ scoreWithDecisions: vi.fn(async () => ({ data: { score: 85, reasons: ["Covers: Figma"], redFlags: [] }, scoredWith: "score-posting-openai-decisions@1 (gpt-6-luna)" })) }));
 
 const { scoreWithJev } = await import("./jev");
+const { scoreWithDecisions } = await import("./decisions");
 const { recordUsage } = await import("@/lib/usage-data");
 
 const profile = demoProfile();
@@ -46,6 +48,14 @@ describe("scoringProblem (#274)", () => {
 });
 
 describe("loadPostingScorer", () => {
+  it("uses OpenAI Decisions independently of the generative AI provider", async () => {
+    state.config = { scorer: "OPENAI_DECISIONS", saved: true, key: "openai-test-only", keyState: "set" };
+    state.aiReady = false;
+    expect(await scoringProblem()).toBeNull();
+    const score = await loadPostingScorer();
+    expect((await score(posting, profile, signal)).data.score).toBe(85);
+    expect(scoreWithDecisions).toHaveBeenCalledWith(posting, profile, { key: "openai-test-only", signal, onUsage: recordUsage });
+  });
   it("scores with Jev and its key once chosen, without the AI provider", async () => {
     state.config = { scorer: "JEV", saved: true, key: "ts", keyState: "set" };
     state.aiReady = false;

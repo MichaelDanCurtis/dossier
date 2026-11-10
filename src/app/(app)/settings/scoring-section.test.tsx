@@ -4,10 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ScoringView } from "@/lib/scoring/scorers";
 
-import { saveScorer, saveTypesafeKey, testJev } from "./actions";
+import { saveScorer, saveTypesafeKey, saveOpenaiDecisionsKey, testJev, testOpenaiDecisions } from "./actions";
 import { ScoringSection } from "./scoring-section";
 
-vi.mock("./actions", () => ({ saveScorer: vi.fn(), saveTypesafeKey: vi.fn(), testJev: vi.fn() }));
+vi.mock("./actions", () => ({ saveScorer: vi.fn(), saveTypesafeKey: vi.fn(), saveOpenaiDecisionsKey: vi.fn(), testJev: vi.fn(), testOpenaiDecisions: vi.fn() }));
 vi.mock("@/components/toast", () => ({ toast: vi.fn(), toastResult: (result: unknown) => result }));
 
 const ai: ScoringView = { scorer: "AI", keyState: "none" };
@@ -19,13 +19,15 @@ beforeEach(() => {
     .mockReset()
     .mockImplementation(async ({ change }) => ({ ok: true, data: { scorer: "JEV", keyState: change.action === "set" ? "set" : "none" } }));
   vi.mocked(testJev).mockReset().mockResolvedValue({ ok: true, data: { connected: true, model: "jev-1.14.0", seconds: 0.4 } });
+  vi.mocked(saveOpenaiDecisionsKey).mockReset().mockImplementation(async ({ change }) => ({ ok: true, data: { scorer: "OPENAI_DECISIONS", keyState: change.action === "set" ? "set" : "none" } }));
+  vi.mocked(testOpenaiDecisions).mockReset().mockResolvedValue({ ok: true, data: { connected: true, model: "gpt-6-luna", seconds: 0.2 } });
 });
 
 describe("ScoringSection (#274)", () => {
   it("offers the AI model and Jev, the AI model by default, with nothing about TypeSafe", () => {
     render(<ScoringSection initial={ai} />);
     expect(screen.getByRole("heading", { name: "Scoring" })).toBeInTheDocument();
-    expect(screen.getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toEqual(["Your AI model", "Jev by TypeSafe"]);
+    expect(screen.getAllByRole("radio").map((radio) => radio.getAttribute("aria-label"))).toEqual(["Your AI model", "Jev by TypeSafe", "OpenAI Decisions"]);
     expect(screen.getByRole("radio", { name: "Your AI model" })).toBeChecked();
     expect(screen.queryByRole("note")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("TypeSafe key")).not.toBeInTheDocument();
@@ -80,5 +82,19 @@ describe("ScoringSection (#274)", () => {
     await userEvent.click(screen.getByRole("radio", { name: "Your AI model" }));
     expect(saveScorer).toHaveBeenCalledWith({ scorer: "AI" });
     expect(screen.queryByLabelText("TypeSafe key")).not.toBeInTheDocument();
+  });
+
+  it("saves a separate OpenAI Decisions key and tests the selected service", async () => {
+    render(<ScoringSection initial={ai} />);
+    await userEvent.click(screen.getByRole("radio", { name: "OpenAI Decisions" }));
+    expect(saveScorer).toHaveBeenCalledWith({ scorer: "OPENAI_DECISIONS" });
+    expect(screen.getByRole("note")).toHaveTextContent("goes to OpenAI");
+    await userEvent.type(screen.getByLabelText("OpenAI API key for Decisions"), "test-openai-only");
+    await userEvent.tab();
+    expect(saveOpenaiDecisionsKey).toHaveBeenCalledWith({ change: { action: "set", value: "test-openai-only" } });
+    expect(saveTypesafeKey).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Test connection" }));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("gpt-6-luna"));
+    expect(testJev).not.toHaveBeenCalled();
   });
 });

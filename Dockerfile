@@ -2,7 +2,7 @@
 
 # Debian rather than Alpine: PDFs are printed by Playwright's own Chromium,
 # which isn't built for musl (decided in E5-5, #46).
-FROM node:24-trixie-slim AS base
+FROM node:24.22.2-trixie-slim@sha256:0820eaa85e07d0490446dd01d14707e17e6108a36988cf374899cd057eb3812d AS base
 WORKDIR /app
 # Swap the image's bundled Yarn 1 for the version pinned in package.json (packageManager).
 RUN corepack enable
@@ -87,6 +87,6 @@ USER node
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
   CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))"
-COPY docker/start.sh ./start.sh
+COPY --chmod=755 docker/start.sh ./start.sh
 # Migrations, the seed, then the server (E12-3).
 CMD ["./start.sh"]

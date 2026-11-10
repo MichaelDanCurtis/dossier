@@ -1,0 +1,11 @@
+node_modules
+state
+secrets
+credentials
+test
+integration
+*.tar*
+.git
+__pycache__
+
+app-source

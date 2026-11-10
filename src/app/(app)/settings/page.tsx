@@ -107,6 +107,7 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           initial={{ on: settings.connectorEnabledAt !== null, redirects: settings.connectorRedirects }}
           address={mcpUrl(env.DOSSIER_PUBLIC_URL ?? (await requestOrigin()))}
           inDesktopApp={isDesktopApp()}
+          accountGateway={process.env.DOSSIER_ACCOUNT_GATEWAY === "on"}
         />
       ) : section === "data" ? (
         <DataSection

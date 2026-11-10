@@ -1,0 +1,10 @@
+{
+  "name": "dossier-private-accounts",
+  "version": "2.0.0",
+  "license": "AGPL-3.0-only",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node server.mjs", "test": "node --test test/*.test.mjs" },
+  "dependencies": { "jose": "6.2.17" },
+  "engines": { "node": ">=22" }
+}

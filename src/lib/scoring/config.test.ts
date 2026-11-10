@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { encryptSecret, JOB_SOURCE_KEY, TYPESAFE_KEY } from "@/lib/secrets";
+import { encryptSecret, JOB_SOURCE_KEY, OPENAI_DECISIONS_KEY, TYPESAFE_KEY } from "@/lib/secrets";
 
 import { jevKey, resolveScoringConfig, scoringView } from "./config";
 
@@ -9,6 +9,13 @@ vi.mock("@/lib/env", () => ({ env: { DOSSIER_SECRET: "a".repeat(32) } }));
 const nothingSaved = { scorer: null, typesafeKeyEnc: null };
 
 describe("resolveScoringConfig (#274)", () => {
+  it("keeps Decisions credentials distinct from Jev and from other encryption purposes", () => {
+    const saved = { scorer: "OPENAI_DECISIONS" as const, typesafeKeyEnc: encryptSecret(TYPESAFE_KEY, "typesafe-only"), openaiDecisionsKeyEnc: encryptSecret(OPENAI_DECISIONS_KEY, "openai-only") };
+    expect(resolveScoringConfig(saved, {})).toMatchObject({ key: "openai-only", keyState: "set" });
+    expect(resolveScoringConfig({ ...saved, openaiDecisionsKeyEnc: null }, { DOSSIER_TYPESAFE_KEY: "wrong-provider" })).toMatchObject({ key: null, keyState: "none" });
+    expect(resolveScoringConfig({ ...saved, openaiDecisionsKeyEnc: encryptSecret(TYPESAFE_KEY, "wrong-kind") }, {})).toMatchObject({ key: null, keyState: "unreadable" });
+    expect(resolveScoringConfig({ ...saved, openaiDecisionsKeyEnc: null }, { DOSSIER_OPENAI_DECISIONS_KEY: "environment-openai" })).toMatchObject({ key: "environment-openai", keyState: "env" });
+  });
   it("scores with the AI model until something chooses Jev", () => {
     expect(resolveScoringConfig(nothingSaved, {})).toEqual({ scorer: "AI", saved: false, key: null, keyState: "none" });
     expect(resolveScoringConfig(nothingSaved, { DOSSIER_SCORER: "jev", DOSSIER_TYPESAFE_KEY: "ts_env" })).toEqual({ scorer: "JEV", saved: false, key: "ts_env", keyState: "env" });

@@ -12,6 +12,7 @@ import { copyText } from "@/lib/copy-text";
 
 import { addConnectorRedirect, disconnectApps, removeConnectorRedirect, setConnector } from "./actions";
 import { SettingsSectionIntro } from "./settings-screen";
+import { PersonalMcpAccess, revokePersonalMcpAccess } from "./personal-mcp-access";
 
 const LINK = "font-medium text-ink underline underline-offset-2";
 
@@ -25,16 +26,20 @@ export function ConnectorSection({
   initial,
   address,
   inDesktopApp = false,
+  accountGateway = false,
 }: {
   initial: { on: boolean; redirects: string[] };
   address: string;
   /** On this computer, in the desktop app: an app's approval page opens in the browser, which the app signs in (#365). */
   inDesktopApp?: boolean;
+  accountGateway?: boolean;
 }) {
   const track = useTrackSave();
   const [on, setOn] = useState(initial.on);
   const [redirects, setRedirects] = useState(initial.redirects);
   const [draft, setDraft] = useState("");
+  const [accessVersion, setAccessVersion] = useState(0);
+  const [disconnecting, setDisconnecting] = useState(false);
   const local = /^http:\/\/(localhost|127\.0\.0\.1)(:|\/)/.test(address);
   const publicHttps = address.startsWith("https://");
 
@@ -42,6 +47,18 @@ export function ConnectorSection({
     setOn(next);
     const result = toastResult(await track(setConnector({ on: next })));
     if (!result.ok) setOn(!next);
+  };
+
+  const disconnect = async () => {
+    setDisconnecting(true);
+    try {
+      if (accountGateway) {
+        await revokePersonalMcpAccess();
+        setAccessVersion((version) => version + 1);
+      }
+      toastResult(await track(disconnectApps({})));
+    } catch { toast("Couldn't disconnect apps. Please try again."); }
+    finally { setDisconnecting(false); }
   };
 
   const copy = async () => toast((await copyText(address)) ? "Address copied." : "Couldn't copy it. Select the address and copy it instead.");
@@ -64,7 +81,7 @@ export function ConnectorSection({
     <>
       <SettingsSectionIntro title="MCP connector">
         Use Dossier from AI apps that speak MCP: Claude, in chats on claude.ai, in the Desktop and mobile apps and in its command-line app, or another app such as
-        n8n. They can search for jobs, read your profile and applications, and save the applications and fit scores they write. They never send or delete anything.
+        Codex or n8n. They can search for jobs, read your profile and applications, and save the applications and fit scores they write. They never send or delete anything.
       </SettingsSectionIntro>
 
       {inDesktopApp && (
@@ -80,7 +97,7 @@ export function ConnectorSection({
           description={
             on
               ? "On. Apps connect at the address below, once you've signed in to Dossier and allowed them."
-              : "Off. The connector's addresses aren't open on this server."
+              : accountGateway ? "Off. Apps cannot access your workspace." : "Off. The connector's addresses aren't open on this server."
           }
           checked={on}
           onCheckedChange={(checked) => void turn(checked)}
@@ -127,7 +144,7 @@ export function ConnectorSection({
             )}
           </Card>
 
-          <Card className="flex flex-col gap-4">
+          {accountGateway ? <PersonalMcpAccess key={accessVersion} /> : <Card className="flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">
               <h3 className="text-control font-medium">Other apps</h3>
               <p className="text-sm text-pretty text-muted">
@@ -168,7 +185,7 @@ export function ConnectorSection({
                 Add
               </Button>
             </div>
-          </Card>
+          </Card>}
 
           <Card className="flex flex-col gap-3 text-sm text-pretty">
             <p>
@@ -185,11 +202,12 @@ export function ConnectorSection({
               connector.
             </p>
             <div>
-              <Button variant="secondary" onClick={() => void track(disconnectApps({})).then(toastResult)}>
+              <Button variant="secondary" disabled={disconnecting} onClick={() => void disconnect()}>
                 Disconnect all apps
               </Button>
               <p className="mt-2 text-meta text-muted">Signs Claude and every other app out. Changing your password or DOSSIER_SECRET does too.</p>
             </div>
+            {accountGateway && <p className="text-meta text-muted"><a href="/_accounts/source" className={LINK}>Download deployment source</a></p>}
           </Card>
         </>
       )}

@@ -23,10 +23,11 @@ import { redirectProblem } from "@/lib/connector/oauth";
 import { countTailoredDocuments, deleteAllDownloads, zipPdfsJob } from "@/lib/jobs/zip-pdfs";
 import { disconnectGoogle } from "@/lib/google/account";
 import { prisma } from "@/lib/prisma";
-import { jevKey, loadScoringConfig, scoringView } from "@/lib/scoring/config";
+import { decisionsKey, jevKey, loadScoringConfig, scoringView } from "@/lib/scoring/config";
+import { askDecisions } from "@/lib/scoring/decisions";
 import { SCORERS } from "@/lib/scoring/scorers";
 import { askJev } from "@/lib/scoring/typesafe";
-import { applySecretChange, JOB_SOURCE_KEY, TYPESAFE_KEY } from "@/lib/secrets";
+import { applySecretChange, JOB_SOURCE_KEY, OPENAI_DECISIONS_KEY, TYPESAFE_KEY } from "@/lib/secrets";
 
 import { seedBuiltIns } from "../../../../prisma/seed/built-ins";
 import { DOCUMENTS_TO_WRITE, isJobRetention } from "@/lib/settings";
@@ -200,6 +201,30 @@ export const saveTypesafeKey = action(
     return loadScoringView();
   },
 );
+
+export const saveOpenaiDecisionsKey = action(
+  z.object({ change: z.discriminatedUnion("action", [z.object({ action: z.literal("set"), value: z.string().trim().min(1).max(1000) }), z.object({ action: z.literal("clear") })]) }),
+  async ({ change }) => {
+    const current = await loadSettings();
+    await saveSettings({ openaiDecisionsKeyEnc: applySecretChange(OPENAI_DECISIONS_KEY, current.openaiDecisionsKeyEnc, change) });
+    return loadScoringView();
+  },
+);
+
+export const testOpenaiDecisions = action(z.object({}), async () => {
+  const config = await loadScoringConfig();
+  if (config.scorer !== "OPENAI_DECISIONS") return { connected: false as const, message: "Choose OpenAI Decisions first." };
+  const decisions = decisionsKey(config);
+  if (decisions.problem !== null) return { connected: false as const, message: decisions.problem };
+  const started = performance.now();
+  try {
+    const { model } = await askDecisions({ state: { message: "Dossier is checking its connection to OpenAI Decisions." }, questions: { check: { type: "noul", instructions: "Is the message about checking a connection?" } } }, { key: decisions.key, timeoutMs: TEST_TIMEOUT_MS, retryDelaysMs: [] });
+    return { connected: true as const, model, seconds: Math.round((performance.now() - started) / 100) / 10 };
+  } catch (error) {
+    if (error instanceof AiError) return { connected: false as const, message: error.message };
+    throw error;
+  }
+});
 
 /** "Test connection": one yes-or-no question to Jev about a sentence, timed. It costs a few dozen tokens. */
 export const testJev = action(z.object({}), async () => {

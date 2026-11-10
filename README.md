@@ -155,3 +155,20 @@ Working on Dossier itself: see [DEVELOPMENT.md](DEVELOPMENT.md).
 ## License
 
 Dossier is free software under the [GNU Affero General Public License v3.0](LICENSE). You may use, change and share it; if you run a changed version for others over a network, you must offer them its source code.
+
+## Optional features in this fork
+
+This branch adds OpenAI Decisions as a posting-scoring choice alongside the AI
+model and Jev, with a separate encrypted key in Settings → Scoring and onboarding.
+Draft generation continues to use the configured generative AI provider.
+
+The optional [private-account companion](deploy/private-accounts/README.md)
+provides isolated workspaces for a small invite-only group, administrator account
+creation and password resets, and per-account MCP bearer tokens. It reuses the
+built-in MCP tools, consolidates MCP controls in Settings, and follows the app's
+fonts, design tokens and light/dark preference. The regular single-user app does
+not require this companion. See its README for deployment assumptions and
+prototype limitations.
+
+These are fork experiments pending upstream feature discussion, not upstream
+support commitments.

@@ -78,3 +78,39 @@ describe("Settings → MCP connector (#221, #281)", () => {
     expect(disconnectApps).toHaveBeenCalledWith({});
   });
 });
+
+describe("private-account MCP settings", () => {
+  it("shows one connector page, creates and copies a one-time token, and disconnects all access", async () => {
+    const user = userEvent.setup();
+    const fetcher = vi.fn(async (_url: string, options?: RequestInit) => {
+      const operation = options?.body?.toString();
+      return new Response(JSON.stringify(operation === "operation=create" ? { token: "test-private-token", authorizations: 1, expires: "2027-02-01T00:00:00Z" } : { authorizations: 0 }));
+    });
+    vi.stubGlobal("fetch", fetcher);
+    try {
+      render(<ConnectorSection initial={{ on: true, redirects: [] }} address={ADDRESS} accountGateway />);
+      expect(await screen.findByText("0 active authorizations")).toBeInTheDocument();
+      expect(screen.queryByLabelText("Callback address")).not.toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Generate personal MCP token" }));
+      expect(await screen.findByText("test-private-token")).toBeInTheDocument();
+      await user.click(screen.getByRole("button", { name: "Copy token" }));
+      expect(copyText).toHaveBeenCalledWith("test-private-token");
+      await user.click(screen.getByRole("button", { name: "Disconnect all apps" }));
+      expect(disconnectApps).toHaveBeenCalledWith({});
+      expect(fetcher.mock.calls.some(([, options]) => options?.body?.toString() === "operation=revoke")).toBe(true);
+      expect(screen.queryByText("test-private-token")).not.toBeInTheDocument();
+    } finally { vi.unstubAllGlobals(); }
+  });
+
+  it("shows token creation errors without exposing a token", async () => {
+    const user = userEvent.setup();
+    vi.stubGlobal("fetch", vi.fn(async (_url: string, options?: RequestInit) => new Response(JSON.stringify(options?.method === "POST" ? { error: "Connector is off." } : { authorizations: 0 }), { status: options?.method === "POST" ? 409 : 200 })));
+    try {
+      render(<ConnectorSection initial={{ on: true, redirects: [] }} address={ADDRESS} accountGateway />);
+      await screen.findByText("0 active authorizations");
+      await user.click(screen.getByRole("button", { name: "Generate personal MCP token" }));
+      expect(await screen.findByRole("alert")).toHaveTextContent("Connector is off.");
+      expect(screen.queryByRole("button", { name: "Copy token" })).not.toBeInTheDocument();
+    } finally { vi.unstubAllGlobals(); }
+  });
+});

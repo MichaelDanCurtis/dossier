@@ -1,0 +1,23 @@
+[Unit]
+Description=Dossier private account provisioning
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /docker/dossier/control.py
+WorkingDirectory=/docker/dossier
+User=root
+Group=root
+Restart=on-failure
+UMask=0077
+Environment=DOCKER_CONFIG=/docker/dossier/.docker-control
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/docker/dossier
+RestrictAddressFamilies=AF_UNIX
+
+[Install]
+WantedBy=multi-user.target

@@ -47,6 +47,7 @@ Exports you download and database dumps you take are copies outside Dossier's re
 | Hacker News (its official API, and Algolia's search of it) | When you press **Refresh** in Startups, then once a day while you open Startups at least every 14 days | Requests for YC startups' job posts and this month's “Who is hiring?” thread. Nothing about you: which posts suit your city and country is worked out on your server |
 | Startups' own sites | Each Startups refresh, for the 12 best new matches with a site of their own, and when you press **Find addresses on their site** or **Look for people's addresses** | Requests for the site's robots.txt and a few public pages. See [Startups](#startups) |
 | TypeSafe (Jev) | Each posting you score, with **Score** in Find jobs or by the job agent, only while **Jev by TypeSafe** is chosen in Settings → Scoring (your AI model scores until you choose it) | See [below](#what-typesafe-receives) |
+| OpenAI Decisions (optional in this fork) | Each posting scored while OpenAI Decisions is selected in Settings → Scoring | The same job-fit rubric and posting/profile evidence used by Jev, excluding name, contact fields and references. Requests go to `api.openai.com/v1/decisions` with your separately stored key. No paid live request was used to validate this prototype. |
 | Anthropic, through Claude | Only while the MCP connector is on (Settings → MCP connector, off by default), and only for the Claude you signed in and allowed: each time Claude uses one of Dossier's tools | What that tool answers. See [MCP connector](#mcp-connector) |
 | Another MCP app you connect, such as n8n | Only while the MCP connector is on, only for an app whose callback address you added in Settings → MCP connector, and only after you signed in and allowed it: each time it uses one of Dossier's tools | What that tool answers, to whoever runs the app. See [MCP connector](#mcp-connector) |
 | The site a posting is on | When you press **Fetch** on a new application, and for a Find jobs posting that came with only its start | A request for the posting's page, from your server, never to an address on your own network |
@@ -140,3 +141,25 @@ What applies depends on who you run Dossier for, and this isn't legal advice.
 Self-hosting alone doesn't make a deployment compliant. Dossier's code shows what it stores and sends. It can't tell you whether your provider, its terms or your account settings meet what you need.
 
 When someone asks for their data, **Export** in Settings → Your data gives everything Dossier keeps except task data and failed sign-ins, which expire on their own, and the mail from Gmail and the Google account, which belong to the mailbox: the mail is still in Gmail. Deleting an application or **Delete everything** removes data as described [above](#what-deleting-removes).
+
+## Optional private-account companion in this fork
+
+Each invited person has a separate app process, database, encryption secret,
+storage volume and Docker network. The VPS administrator can access the host and
+all accounts' data; this does not protect users from the host operator.
+
+With the companion enabled, Settings → MCP connector also manages personal
+bearer tokens for clients such as Codex or n8n. These confer access to the same
+native tool catalog and only their owner's workspace. Personal tokens are shown
+once, expire after 90 days, and are replaced when a new one is generated. The
+companion persists token/code hashes and authorization metadata in its own SQLite
+database; the native single-user OAuth implementation described above is unchanged.
+Account-password resets, account access changes, turning the connector off, and
+Disconnect all apps invalidate access. Already retrieved data remains with the
+connected client.
+
+The companion's OAuth flow accepts HTTPS and loopback callback addresses through
+dynamic registration and requires per-account consent with PKCE; it does not use
+the native single-user callback allowlist. Review the requested client and return
+address before granting access. Browser OAuth and bearer-token controls share one
+Settings page in this deployment mode.

@@ -10,7 +10,8 @@ import { postingText, type FoundPosting } from "@/lib/job-search/search";
 import type { ProfileData } from "@/lib/profile";
 import { recordUsage } from "@/lib/usage-data";
 
-import { jevKey, loadScoringConfig, type ScoringConfig } from "./config";
+import { decisionsKey, jevKey, loadScoringConfig, type ScoringConfig } from "./config";
+import { scoreWithDecisions } from "./decisions";
 import { scoreWithJev } from "./jev";
 
 // Scoring a posting against the profile (#208, #274), with whatever Settings →
@@ -28,6 +29,7 @@ export const AI_PROVIDER_MISSING = "Choose an AI provider in Settings → AI pro
 export async function scoringProblem(config?: ScoringConfig): Promise<string | null> {
   const settled = config ?? (await loadScoringConfig());
   if (settled.scorer === "JEV") return jevKey(settled).problem;
+  if (settled.scorer === "OPENAI_DECISIONS") return decisionsKey(settled).problem;
   return (await isAiConfigured()) ? null : AI_PROVIDER_MISSING;
 }
 
@@ -37,6 +39,12 @@ export async function scoringProblem(config?: ScoringConfig): Promise<string | n
  */
 export async function loadPostingScorer(): Promise<PostingScorer> {
   const config = await loadScoringConfig();
+  if (config.scorer === "OPENAI_DECISIONS") {
+    const decisions = decisionsKey(config);
+    if (decisions.problem !== null) throw AiError.config(decisions.problem);
+    const { key } = decisions;
+    return (posting, profile, signal) => scoreWithDecisions(posting, profile, { key, signal, onUsage: recordUsage });
+  }
   if (config.scorer === "JEV") {
     const jev = jevKey(config);
     if (jev.problem !== null) throw AiError.config(jev.problem);

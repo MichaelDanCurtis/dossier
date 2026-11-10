@@ -12,7 +12,7 @@ const HASH_PASSWORD = "Make one with `docker run --rm -it ghcr.io/aientech/dossi
 
 export const AI_PROVIDERS = ["local", "openai", "anthropic", "mistral", "lmstudio"] as const;
 export const JOB_SOURCE_NAMES = ["jsearch", "adzuna", "arbeitsagentur", "freehire", "off"] as const;
-export const SCORER_NAMES = ["ai", "jev"] as const;
+export const SCORER_NAMES = ["ai", "jev", "openai-decisions"] as const;
 
 // An empty value (`DOSSIER_AI_KEY=` in .env) counts as unset.
 const unsetIfEmpty = (value: unknown) =>
@@ -154,6 +154,7 @@ const schema = z.object({
   ),
   // Never echo the value: it's an API key.
   DOSSIER_TYPESAFE_KEY: optional(z.string().trim()),
+  DOSSIER_OPENAI_DECISIONS_KEY: optional(z.string().trim()),
   // Google sign-in for Gmail and Calendar (E15-1): an OAuth client of type
   // "Web application". Settings → Google can save one instead, which wins.
   // Never echo the secret.

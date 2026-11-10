@@ -79,6 +79,11 @@ export function Sidebar({
       )}
 
       <div className="flex flex-col gap-0.5 border-t border-line p-2 group-data-collapsed/sidebar:px-1">
+        {process.env.DOSSIER_ACCOUNT_GATEWAY === "on" && (
+          <>
+            {process.env.DOSSIER_ACCOUNT_ROLE === "admin" && <a href="/_accounts/admin" className="rounded-control px-3 py-2 text-sm text-muted hover:bg-hover hover:text-ink">Manage users</a>}
+          </>
+        )}
         <ThemeToggle serverScheme={colorScheme} />
         <RepositoryLink />
       </div>
