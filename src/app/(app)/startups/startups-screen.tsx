@@ -295,7 +295,7 @@ function StartupCard({ startup: initial, headline, aiReady, today }: { startup: 
         <ScoreBadge score={startup.score} />
         <div className="flex min-w-0 flex-1 flex-col gap-1">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 className="font-serif text-section">{startup.company}</h3>
+            <h3 className="font-heading text-section">{startup.company}</h3>
             <span className="rounded-full border border-line-field px-2 py-0.5 text-xs text-muted">
               {info.name} · {info.kind}
             </span>

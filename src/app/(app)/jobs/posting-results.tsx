@@ -452,7 +452,7 @@ function PostingDetail({
       className="flex min-w-0 flex-[999_1_420px] scroll-mt-[121px] flex-col gap-4 rounded-panel border border-line-card bg-card p-7 max-lg:order-first max-lg:max-h-[75vh] lg:sticky lg:top-[121px] lg:max-h-[calc(100dvh-145px)]"
     >
       <div className="flex flex-col gap-1.5">
-        <h2 id={headingId} className="font-serif text-section text-pretty">
+        <h2 id={headingId} className="font-heading text-section text-pretty">
           {posting.title || "Untitled posting"}
         </h2>
         <p className="text-sm text-muted">{[posting.company, posting.place, posting.remote ? "Remote" : "", posting.salary].filter(Boolean).join(" · ")}</p>

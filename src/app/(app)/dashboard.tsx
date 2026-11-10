@@ -103,7 +103,7 @@ function Funnel({ figures }: { figures: DashboardFigures }) {
     <section aria-labelledby="funnel-heading" className={`${card} col-span-full gap-6 p-7`}>
       <div className="flex flex-wrap items-baseline justify-between gap-4">
         <div className="flex flex-col gap-1">
-          <h2 id="funnel-heading" className="font-serif text-section">
+          <h2 id="funnel-heading" className="font-heading text-section">
             Your funnel
           </h2>
           <p className="text-control text-muted">How far each application you&apos;ve sent has made it, and where the ones that stopped are now.</p>
@@ -123,7 +123,7 @@ function Figure({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col-reverse gap-0.5">
       <dt className="text-label text-muted">{label}</dt>
-      <dd className="font-serif text-[32px] leading-none tabular-nums">{value}</dd>
+      <dd className="font-heading text-[32px] leading-none tabular-nums">{value}</dd>
     </div>
   );
 }
@@ -200,7 +200,7 @@ function WorthALook({ items, quietDays }: { items: DashboardFigures["attention"]
 function Welcome() {
   return (
     <Panel>
-      <h2 className="font-serif text-section">Welcome to Dossier</h2>
+      <h2 className="font-heading text-section">Welcome to Dossier</h2>
       <p className="text-sm text-muted">
         Start with your profile: your roles, skills and education are what every tailored resume and cover letter is built from.
         Then paste a job posting, and your funnel and next steps will show up here.

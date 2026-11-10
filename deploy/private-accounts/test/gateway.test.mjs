@@ -223,3 +223,37 @@ test('unified settings cannot generate a token with the connector switched off',
   const result = await f.request('/_accounts/api/mcp', { method: 'POST', headers: { cookie, origin: f.origin }, body: new URLSearchParams({ operation: 'create' }) });
   assert.equal(result.status, 409);
 });
+
+test('account pages paint Studio by default and honor both appearance cookies before sign-in', async (t) => {
+  const f = await fixture(t);
+  const initial = await (await f.request('/login')).text();
+  assert.match(initial, /<html lang="en" data-ui-theme="studio">/);
+  for (const theme of ['studio', 'editorial']) for (const mode of ['light', 'dark']) {
+    const html = await (await f.request('/login', { headers: { cookie: `dossier_ui_theme=${theme}; dossier_theme=${mode}` } })).text();
+    assert.ok(html.includes(`<html lang="en" data-ui-theme="${theme}" data-theme="${mode}">`));
+    assert.ok(html.includes('--ui-color-sidebar: light-dark(#101c34, #0a1427)'));
+    assert.ok(html.includes('SourceSerif4-Regular.woff2'));
+  }
+});
+
+test('appearance cookies are allowlisted and do not change account authorization', async (t) => {
+  const f = await fixture(t);
+  const invalid = await (await f.request('/login', { headers: { cookie: 'dossier_ui_theme=bad; dossier_theme=bad' } })).text();
+  assert.match(invalid, /<html lang="en" data-ui-theme="studio">/);
+  assert.equal((await f.request('/_accounts/admin', { headers: { cookie: 'dossier_ui_theme=editorial' } })).status, 303);
+  const { cookie } = await f.login('alice');
+  const response = await f.request('/_accounts/admin', { headers: { cookie: `${cookie}; dossier_ui_theme=editorial; dossier_theme=dark` } });
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /<html lang="en" data-ui-theme="editorial" data-theme="dark">/);
+});
+
+test('theme fonts are local allowlisted assets', async (t) => {
+  const f = await fixture(t);
+  for (const font of ['IBMPlexSans-Regular.woff2', 'SourceSerif4-Regular.woff2']) {
+    const response = await f.request(`/_accounts/assets/fonts/${font}`);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('content-type'), 'font/woff2');
+    assert.ok((await response.arrayBuffer()).byteLength > 1000);
+  }
+  assert.equal((await f.request('/_accounts/assets/fonts/unknown.woff2')).status, 404);
+});

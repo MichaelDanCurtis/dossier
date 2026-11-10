@@ -71,7 +71,7 @@ export function SendWithGmail({
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 flex w-[min(480px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-dialog border border-line-popover bg-card p-6 shadow-menu">
-          <AlertDialog.Title className="font-serif text-[22px] leading-tight">Send this application?</AlertDialog.Title>
+          <AlertDialog.Title className="font-heading text-[22px] leading-tight">Send this application?</AlertDialog.Title>
           <AlertDialog.Description asChild>
             <div className="flex flex-col gap-3 text-sm text-muted">
               <dl className="grid grid-cols-[64px_1fr] gap-x-3 gap-y-1.5">

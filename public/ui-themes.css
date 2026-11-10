@@ -1,0 +1,187 @@
+/* Shared app/account-page tokens. Studio is the default; document themes use their own fonts and palette. */
+:root, [data-ui-theme="studio"] {
+  --ui-color-paper: light-dark(#eef3f9, #0b1120);
+  --ui-color-sidebar: light-dark(#101c34, #0a1427);
+  --ui-color-surface: light-dark(#f8fafd, #101c30);
+  --ui-color-card: light-dark(#ffffff, #15243b);
+  --ui-color-canvas: light-dark(#e3eaf4, #080f1b);
+  --ui-color-input: light-dark(#ffffff, #0b1628);
+  --ui-color-ink: light-dark(#15243b, #e8f0ff);
+  --ui-color-document: light-dark(#26364d, #dce7fa);
+  --ui-color-muted: light-dark(#536379, #a8b8d1);
+  --ui-color-faint: light-dark(#8c99ab, #62748f);
+  --ui-color-primary: light-dark(#2256d8, #9dbdff);
+  --ui-color-primary-hover: light-dark(#1846bc, #bed3ff);
+  --ui-color-on-primary: light-dark(#ffffff, #0b1a39);
+  --ui-color-primary-text: light-dark(#1647c0, #afc9ff);
+  --ui-color-focus: light-dark(#1647c0, #afc9ff);
+  --ui-color-inverse: light-dark(#222222, #3b3834);
+  --ui-color-on-inverse: light-dark(#fbfaf7, #f0ede7);
+  --ui-color-on-inverse-muted: light-dark(rgb(251 250 247 / 0.78), rgb(240 237 231 / 0.82));
+  --ui-color-notice-security: #fca5a5;
+  --ui-color-notice-important: #fbbf24;
+  --ui-color-line: light-dark(#d6deeb, #2d3e57);
+  --ui-color-line-card: light-dark(#d6deeb, #2d3e57);
+  --ui-color-line-field: light-dark(#a2aec0, #60748f);
+  --ui-color-line-input: light-dark(#7b8b9f, #7d90ab);
+  --ui-color-line-control: light-dark(#7b8b9f, #7d90ab);
+  --ui-color-line-popover: light-dark(#c5d0e1, #465b78);
+  --ui-color-line-strong: light-dark(#7b8b9f, #7d90ab);
+  --ui-color-hover: light-dark(#e8eef9, #233550);
+  --ui-color-selected: light-dark(#e4ecff, #263f64);
+  --ui-color-track: light-dark(#e2e9f4, #253650);
+  --ui-color-toggle-off: light-dark(#78869b, #60758f);
+  --ui-color-danger: light-dark(#9a4a3a, #f87171);
+  --ui-color-error: light-dark(#9a3a2c, #f87171);
+  --ui-color-error-strong: light-dark(#7a2e22, #fca5a5);
+  --ui-color-danger-fill: light-dark(#9a3a2c, #c4320a);
+  --ui-color-danger-fill-hover: light-dark(#7a2e22, #9a3a2c);
+  --ui-color-danger-surface: light-dark(oklch(0.98 0.01 30), rgb(239 68 68 / 0.14));
+  --ui-color-danger-line: light-dark(oklch(0.8 0.06 30), rgb(239 68 68 / 0.35));
+  --ui-color-danger-control: light-dark(oklch(0.7 0.1 30), rgb(239 68 68 / 0.55));
+  --ui-color-danger-disabled: light-dark(oklch(0.8 0.05 30), #5c2a2a);
+  --ui-color-warning: light-dark(#6b4f1a, #fbbf24);
+  --ui-color-warning-surface: light-dark(oklch(0.94 0.04 85), rgb(245 158 11 / 0.14));
+  --ui-color-warning-line: light-dark(oklch(0.85 0.06 85), rgb(245 158 11 / 0.4));
+  --ui-color-success: light-dark(#24764a, #68d7aa);
+  --ui-color-flash: light-dark(oklch(0.95 0.05 90), rgb(240 200 90 / 0.16));
+  --ui-color-status-draft: light-dark(#a29d94, #827c73);
+  --ui-color-status-sent: oklch(0.62 0.09 250);
+  --ui-color-status-screening: oklch(0.62 0.09 205);
+  --ui-color-status-interview: oklch(0.6 0.09 295);
+  --ui-color-status-offer: oklch(0.68 0.1 80);
+  --ui-color-status-accepted: oklch(0.6 0.1 150);
+  --ui-color-status-rejected: oklch(0.58 0.1 30);
+  --ui-color-status-declined: light-dark(#6f6a62, #958f86);
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-sidebar-ink: #eaf1ff;
+  --ui-sidebar-muted: #b1c1dc;
+  --ui-sidebar-line: #32405a;
+  --ui-sidebar-selected: #254887;
+}
+[data-ui-theme="editorial"] {
+  --ui-color-paper: light-dark(#e5e9e0, #0c1511);
+  --ui-color-sidebar: light-dark(#e7ecdf, #10221a);
+  --ui-color-surface: light-dark(#fbf9f0, #17231b);
+  --ui-color-card: light-dark(#fffdf6, #1d2c21);
+  --ui-color-canvas: light-dark(#dce3d3, #09120d);
+  --ui-color-input: light-dark(#fffef9, #112017);
+  --ui-color-ink: light-dark(#193d2d, #eef0df);
+  --ui-color-document: light-dark(#304732, #e0e7d7);
+  --ui-color-muted: light-dark(#51624e, #afbdac);
+  --ui-color-faint: light-dark(#8f9a84, #70866a);
+  --ui-color-primary: light-dark(#26563d, #b3ce99);
+  --ui-color-primary-hover: light-dark(#1b422d, #cee3b7);
+  --ui-color-on-primary: light-dark(#ffffff, #14271b);
+  --ui-color-primary-text: light-dark(#26563d, #b3ce99);
+  --ui-color-focus: light-dark(#26563d, #b3ce99);
+  --ui-color-line: light-dark(#d0d7c6, #40513f);
+  --ui-color-line-card: light-dark(#d0d7c6, #40513f);
+  --ui-color-line-field: light-dark(#a5b399, #647b5d);
+  --ui-color-line-input: light-dark(#718168, #8a9a7f);
+  --ui-color-line-control: light-dark(#718168, #8a9a7f);
+  --ui-color-line-popover: light-dark(#b3c0a6, #597250);
+  --ui-color-line-strong: light-dark(#718168, #8a9a7f);
+  --ui-color-hover: light-dark(#e7ecdf, #2b3f2b);
+  --ui-color-selected: light-dark(#dee8d4, #344b34);
+  --ui-color-track: light-dark(#dce3d3, #344b34);
+  --ui-color-toggle-off: light-dark(#74806b, #697f65);
+  --ui-color-success: light-dark(#286442, #9bd8aa);
+  --ui-font-body: var(--typeface-plex-sans, PlexSans, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-source-serif, SourceSerif, Georgia, serif);
+  --ui-heading-weight: 400;
+  --ui-radius-control: 5px;
+  --ui-radius-card: 5px;
+  --ui-radius-panel: 5px;
+  --ui-sidebar-ink: light-dark(#27462d, #d6e6cc);
+  --ui-sidebar-muted: light-dark(#4c654d, #abc2a7);
+  --ui-sidebar-line: light-dark(#c2ceb7, #3d543e);
+  --ui-sidebar-selected: light-dark(#c9d9bc, #344b34);
+}
+:root, [data-ui-theme] {
+  --color-paper: var(--ui-color-paper);
+  --color-sidebar: var(--ui-color-sidebar);
+  --color-surface: var(--ui-color-surface);
+  --color-card: var(--ui-color-card);
+  --color-canvas: var(--ui-color-canvas);
+  --color-input: var(--ui-color-input);
+  --color-ink: var(--ui-color-ink);
+  --color-document: var(--ui-color-document);
+  --color-muted: var(--ui-color-muted);
+  --color-faint: var(--ui-color-faint);
+  --color-primary: var(--ui-color-primary);
+  --color-primary-hover: var(--ui-color-primary-hover);
+  --color-on-primary: var(--ui-color-on-primary);
+  --color-primary-text: var(--ui-color-primary-text);
+  --color-focus: var(--ui-color-focus);
+  --color-inverse: var(--ui-color-inverse);
+  --color-on-inverse: var(--ui-color-on-inverse);
+  --color-on-inverse-muted: var(--ui-color-on-inverse-muted);
+  --color-notice-security: var(--ui-color-notice-security);
+  --color-notice-important: var(--ui-color-notice-important);
+  --color-line: var(--ui-color-line);
+  --color-line-card: var(--ui-color-line-card);
+  --color-line-field: var(--ui-color-line-field);
+  --color-line-input: var(--ui-color-line-input);
+  --color-line-control: var(--ui-color-line-control);
+  --color-line-popover: var(--ui-color-line-popover);
+  --color-line-strong: var(--ui-color-line-strong);
+  --color-hover: var(--ui-color-hover);
+  --color-selected: var(--ui-color-selected);
+  --color-track: var(--ui-color-track);
+  --color-toggle-off: var(--ui-color-toggle-off);
+  --color-danger: var(--ui-color-danger);
+  --color-error: var(--ui-color-error);
+  --color-error-strong: var(--ui-color-error-strong);
+  --color-danger-fill: var(--ui-color-danger-fill);
+  --color-danger-fill-hover: var(--ui-color-danger-fill-hover);
+  --color-danger-surface: var(--ui-color-danger-surface);
+  --color-danger-line: var(--ui-color-danger-line);
+  --color-danger-control: var(--ui-color-danger-control);
+  --color-danger-disabled: var(--ui-color-danger-disabled);
+  --color-warning: var(--ui-color-warning);
+  --color-warning-surface: var(--ui-color-warning-surface);
+  --color-warning-line: var(--ui-color-warning-line);
+  --color-success: var(--ui-color-success);
+  --color-flash: var(--ui-color-flash);
+  --color-status-draft: var(--ui-color-status-draft);
+  --color-status-sent: var(--ui-color-status-sent);
+  --color-status-screening: var(--ui-color-status-screening);
+  --color-status-interview: var(--ui-color-status-interview);
+  --color-status-offer: var(--ui-color-status-offer);
+  --color-status-accepted: var(--ui-color-status-accepted);
+  --color-status-rejected: var(--ui-color-status-rejected);
+  --color-status-declined: var(--ui-color-status-declined);
+  --radius-control: var(--ui-radius-control);
+  --radius-card: var(--ui-radius-card);
+  --radius-panel: var(--ui-radius-panel);
+}
+:root { color-scheme: light dark; }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+.app-sidebar {
+  --color-surface: var(--color-sidebar);
+  --color-ink: var(--ui-sidebar-ink);
+  --color-muted: var(--ui-sidebar-muted);
+  --color-primary: var(--ui-sidebar-ink);
+  --color-primary-hover: var(--ui-sidebar-ink);
+  --color-on-primary: var(--color-sidebar);
+  --color-line: var(--ui-sidebar-line);
+  --color-line-card: var(--ui-sidebar-line);
+  --color-hover: var(--ui-sidebar-selected);
+  --color-selected: var(--ui-sidebar-selected);
+  --color-focus: var(--ui-sidebar-ink);
+  color: var(--ui-sidebar-ink);
+}
+/* Editorial's settings read like a page; Studio retains the compact section column. */
+:root[data-ui-theme="editorial"] .app-settings-layout { display:block; }
+:root[data-ui-theme="editorial"] .app-settings-nav { flex-direction:row; flex-wrap:wrap; max-width:none; border-bottom:1px solid var(--color-line); padding-bottom:1rem; margin-bottom:1.5rem; }
+@media(max-width:700px) {
+  .app-settings-layout { padding-inline:1rem; }
+  .app-settings-nav { min-width:0; }
+}

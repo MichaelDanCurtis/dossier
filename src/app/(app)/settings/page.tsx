@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 
 import { loadAiConfig, loadAiSettingsView } from "@/lib/ai/config";
 import { jobSearchView, loadJobSearchConfig } from "@/lib/job-search/config";
@@ -25,8 +25,10 @@ import { loadScoringConfig, scoringView } from "@/lib/scoring/config";
 import { loadSettings } from "@/lib/settings-data";
 import { availableUpdate } from "@/lib/update-check";
 import { USAGE_PING_HOST, usagePingChoice } from "@/lib/usage-ping";
+import { APP_THEME_COOKIE, COLOR_SCHEME_COOKIE, parseAppTheme, parseColorScheme } from "@/lib/ui-preferences";
 
 import { AgentSection } from "./agent-section";
+import { AppearanceSection } from "./appearance-section";
 import { AiBehaviour } from "./ai-behaviour";
 import { AiProviderSection } from "./ai-provider-section";
 import { DataSection } from "./data-section";
@@ -47,10 +49,13 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
   const params = await searchParams;
   const section = settingsSectionFromParam(params.section);
   const settings = await loadSettings();
+  const appearance = section === "appearance" ? await cookies() : null;
 
   return (
     <SettingsScreen section={section}>
-      {section === "ai" ? (
+      {section === "appearance" ? (
+        <AppearanceSection initial={{ theme: parseAppTheme(appearance?.get(APP_THEME_COOKIE)?.value), scheme: parseColorScheme(appearance?.get(COLOR_SCHEME_COOKIE)?.value) }} />
+      ) : section === "ai" ? (
         <>
           <AiProviderSection initial={await loadAiSettingsView()} />
           <AiBehaviour initial={{ creativity: settings.creativity, strict: settings.strict, showDiff: settings.showDiff }} />

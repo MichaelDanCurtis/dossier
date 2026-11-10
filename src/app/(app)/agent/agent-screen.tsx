@@ -132,7 +132,7 @@ export function AgentScreen({ view }: { view: AgentView }) {
 
         <Card padding="none" className="flex flex-col gap-4 px-7 py-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="font-serif text-section">Recurring searches</h2>
+            <h2 className="font-heading text-section">Recurring searches</h2>
             <Link href="/settings?section=agent" className="text-meta text-muted underline underline-offset-2">Manage searches and shared schedule</Link>
           </div>
           {view.searches.length === 0 ? <p className="text-meta text-muted">No saved searches yet.</p> : <ol className="flex flex-col gap-3">
@@ -289,7 +289,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h2 id={id} className="font-serif text-section">
+        <h2 id={id} className="font-heading text-section">
           {title}
         </h2>
         <p className="text-meta text-muted">{count} waiting</p>
@@ -318,7 +318,7 @@ function CandidateCard({ candidate, children }: { candidate: AgentCandidateView;
     <Card padding="none" className="flex flex-col gap-3.5 px-6 py-5">
       <div className="flex items-start justify-between gap-4">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <h3 className="font-serif text-[20px] leading-tight text-pretty">{candidate.title}</h3>
+          <h3 className="font-heading text-[20px] leading-tight text-pretty">{candidate.title}</h3>
           {candidate.company && <p className="text-sm text-ink">{candidate.company}</p>}
           {candidate.facts && <p className="text-meta text-muted">{candidate.facts}</p>}
           {candidate.origin && <p className="text-xs text-muted">{candidate.origin}</p>}

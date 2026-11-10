@@ -70,7 +70,7 @@ function CitationField({
           <button type="button" className={cn(markButton, "font-bold")} title="Bold (Ctrl+B)" aria-label="Bold" onClick={() => mark("bold")}>
             B
           </button>
-          <button type="button" className={cn(markButton, "font-serif italic")} title="Italic (Ctrl+I)" aria-label="Italic" onClick={() => mark("italic")}>
+          <button type="button" className={cn(markButton, "font-heading italic")} title="Italic (Ctrl+I)" aria-label="Italic" onClick={() => mark("italic")}>
             I
           </button>
         </span>

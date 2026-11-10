@@ -4,20 +4,19 @@ import { Moon, Sun } from "lucide-react";
 import { useSyncExternalStore } from "react";
 
 import { cn } from "@/lib/cn";
-import { COLOR_SCHEME_COOKIE, rememberPreference, type ColorScheme } from "@/lib/ui-preferences";
+import { saveColorScheme, type ColorScheme } from "@/lib/ui-preferences";
 
 import { useSidebarCollapsed } from "./sidebar-frame";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
-const listeners = new Set<() => void>();
 
 function subscribe(listener: () => void) {
   const query = matchMedia(DARK_QUERY);
   query.addEventListener("change", listener);
-  listeners.add(listener);
+  window.addEventListener("dossier:appearance", listener);
   return () => {
     query.removeEventListener("change", listener);
-    listeners.delete(listener);
+    window.removeEventListener("dossier:appearance", listener);
   };
 }
 
@@ -43,9 +42,7 @@ export function ThemeToggle({ serverScheme }: { serverScheme?: ColorScheme }) {
   const Icon = next === "dark" ? Moon : Sun;
 
   const toggle = () => {
-    document.documentElement.dataset.theme = next;
-    rememberPreference(COLOR_SCHEME_COOKIE, next);
-    listeners.forEach((listener) => listener());
+    saveColorScheme(next);
   };
 
   return (

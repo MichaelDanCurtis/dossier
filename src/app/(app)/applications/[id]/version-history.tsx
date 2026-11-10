@@ -92,7 +92,7 @@ export function VersionHistory({
         <Dialog.Content className="fixed top-0 right-0 z-50 flex h-full w-[min(400px,100vw)] flex-col gap-4 overflow-auto border-l border-line-popover bg-card p-6 shadow-menu">
           <div className="flex items-start justify-between gap-4">
             <div className="flex flex-col gap-1">
-              <Dialog.Title className="font-serif text-[22px] leading-tight">History of the {name}</Dialog.Title>
+              <Dialog.Title className="font-heading text-[22px] leading-tight">History of the {name}</Dialog.Title>
               <Dialog.Description className="text-sm text-muted">
                 A version is saved with each AI change and before each restore. Your own edits are in the current version.
               </Dialog.Description>

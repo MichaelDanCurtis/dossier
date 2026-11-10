@@ -54,7 +54,7 @@ export function LoginForm({ next }: { next?: string }) {
     >
       {next && <input type="hidden" name="next" value={next} />}
       <div className="flex flex-col gap-1.5">
-        <h1 className="font-serif text-[28px] leading-[1.15] tracking-[-0.01em]">Welcome back</h1>
+        <h1 className="font-heading text-[28px] leading-[1.15] tracking-[-0.01em]">Welcome back</h1>
         <p className="text-sm text-muted">Sign in to pick up where you left off.</p>
       </div>
 

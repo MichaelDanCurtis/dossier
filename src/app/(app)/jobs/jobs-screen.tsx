@@ -257,7 +257,7 @@ function ViewTabs({ view, counts }: { view: JobsView; counts: { searches: number
 function NoSource() {
   return (
     <div className="mx-10 mb-16 flex max-w-[640px] flex-col items-start gap-3 rounded-panel border border-line-card bg-card px-7 py-7">
-      <h2 className="font-serif text-section">Choose where to search</h2>
+      <h2 className="font-heading text-section">Choose where to search</h2>
       <p className="text-sm text-muted">
         Find jobs searches one job source for you, such as JSearch (LinkedIn, Indeed and more) or Adzuna. Pick one in Settings. Until then,
         nothing is sent anywhere.

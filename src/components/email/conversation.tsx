@@ -387,7 +387,7 @@ function ReplyDraft({ email, aiReady }: { email: EmailView; aiReady: boolean }) 
         <AlertDialog.Portal>
           <AlertDialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
           <AlertDialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[85vh] w-[min(560px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 rounded-dialog border border-line-popover bg-card p-6 shadow-menu">
-            <AlertDialog.Title className="font-serif text-[22px] leading-tight">Send your answer?</AlertDialog.Title>
+            <AlertDialog.Title className="font-heading text-[22px] leading-tight">Send your answer?</AlertDialog.Title>
             <AlertDialog.Description className="text-sm text-muted">
               To {email.fromName ? `${email.fromName} <${email.fromAddress}>` : email.fromAddress}, in the same thread. This can&apos;t be unsent.
             </AlertDialog.Description>

@@ -205,7 +205,7 @@ function Nothing({ children }: { children: ReactNode }) {
 function FirstApplication() {
   return (
     <div className="mx-10 mb-16 flex max-w-[640px] flex-col items-start gap-3 rounded-panel border border-line-card bg-card px-7 py-7">
-      <h2 className="font-serif text-section">Your first application</h2>
+      <h2 className="font-heading text-section">Your first application</h2>
       <p className="text-sm text-muted">
         Paste a job posting and I&apos;ll read it, check it against your profile and draft a tailored resume and cover letter. Your
         profile is what everything is built from, so it&apos;s worth filling in first.

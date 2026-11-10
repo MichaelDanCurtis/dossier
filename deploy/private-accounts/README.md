@@ -134,8 +134,22 @@ python3 deploy/private-accounts/package_release.py --app-source . \
   --gateway-source deploy/private-accounts \
   --output deploy/private-accounts/deployment-source.zip
 docker build --target production -t dossier-private:1.13.0-accounts2 .
-docker build -t dossier-private-accounts:2.0.0 deploy/private-accounts
+docker build -f deploy/private-accounts/Dockerfile -t dossier-private-accounts:2.0.0 .
 ```
+
+### App appearance
+
+Studio is the default app theme. Settings → Appearance previews Studio and
+Editorial before Apply, independently of light/dark/system mode. The browser
+keeps `dossier_ui_theme` and the existing `dossier_theme` cookies for a year;
+the app and account gateway read them before rendering. These preferences
+follow navigation and sign-in on that browser. They do not change resume themes
+or sync across devices.
+
+`public/ui-themes.css` is the canonical palette for both native app and account
+pages. Build the gateway from the repository root so its image copies that same
+file. UI headings have their own font role; the document renderer retains its
+own typefaces, colors and layout. All fonts are bundled locally.
 
 Verify changes in a disposable two-account deployment before upgrading. Do not
 run `test/production.mjs` against real user accounts: it writes fixture data,

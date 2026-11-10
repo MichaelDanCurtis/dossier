@@ -60,7 +60,7 @@ export function AnnouncementNotice({ announcement }: { announcement: Announcemen
             </span>
             {word}
           </p>
-          <h2 id={titleId} className="font-serif text-2xl leading-tight wrap-anywhere">
+          <h2 id={titleId} className="font-heading text-2xl leading-tight wrap-anywhere">
             {title}
           </h2>
           <p className="text-sm whitespace-pre-line text-on-inverse-muted wrap-anywhere">{body}</p>

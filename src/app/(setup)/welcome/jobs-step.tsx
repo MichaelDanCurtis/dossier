@@ -89,7 +89,7 @@ function SourcePanel({ choice, initial, onConnected }: { choice: JobChoice; init
   return (
     <Card className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <h2 className="font-serif text-section">{choice.name}</h2>
+        <h2 className="font-heading text-section">{choice.name}</h2>
         <p className="text-sm text-pretty text-muted">{choice.about}</p>
       </div>
       <dl className="grid gap-x-6 gap-y-3 text-sm sm:grid-cols-[140px_1fr]">

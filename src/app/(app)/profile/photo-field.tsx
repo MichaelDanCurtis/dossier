@@ -198,7 +198,7 @@ function CropDialog({ image, onCancel, onUse }: { image: HTMLImageElement; onCan
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-32px)] w-[min(400px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col gap-4 overflow-y-auto rounded-dialog border border-line-popover bg-card p-6 shadow-menu">
-          <Dialog.Title className="font-serif text-[22px] leading-tight">Crop your photo</Dialog.Title>
+          <Dialog.Title className="font-heading text-[22px] leading-tight">Crop your photo</Dialog.Title>
           <Dialog.Description className="text-sm text-muted">
             Drag it, or use the arrow keys, to move it. Themes with a round or square photo show what&apos;s inside the circle.
           </Dialog.Description>

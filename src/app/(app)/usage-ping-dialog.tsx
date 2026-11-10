@@ -47,7 +47,7 @@ export function UsagePingDialog({ host }: { host: string }) {
           }}
           className="fixed top-1/2 left-1/2 z-50 flex max-h-[calc(100vh-32px)] w-[min(520px,calc(100vw-32px))] -translate-x-1/2 -translate-y-1/2 flex-col gap-3 overflow-y-auto rounded-dialog border border-line-popover bg-card p-6 shadow-menu focus:outline-none"
         >
-          <Dialog.Title className="font-serif text-[22px] leading-tight">Send a daily usage ping?</Dialog.Title>
+          <Dialog.Title className="font-heading text-[22px] leading-tight">Send a daily usage ping?</Dialog.Title>
           <Dialog.Description asChild>
             <div className="flex flex-col gap-2.5 text-sm text-muted">
               <p>

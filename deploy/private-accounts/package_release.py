@@ -5,11 +5,11 @@ from pathlib import Path
 import subprocess
 import zipfile
 
-EXCLUDED = {".git", "node_modules", ".next", "coverage", "__pycache__", "state", "credentials", "integration", "backups", "control", ".docker-control", "secrets"}
+EXCLUDED = {".git", "node_modules", ".next", "coverage", "__pycache__", "state", "credentials", "integration", "backups", "control", ".docker-control", "secrets", "work", ".serena"}
 
 
 def permitted(path):
-    return not any(part in EXCLUDED for part in path.parts) and (not path.name.startswith(".env") or path.name == ".env.example") and path.name not in {"deployment-source.zip", "source.tar.gz", "docker-compose.yml", ".provision.lock"}
+    return not any(part in EXCLUDED for part in path.parts) and (not path.name.startswith(".env") or path.name == ".env.example") and path.name not in {"deployment-source.zip", "source.tar.gz", "docker-compose.yml", ".provision.lock", "LOCAL_ROADMAP.md"}
 
 
 def files(root):

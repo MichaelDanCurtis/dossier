@@ -208,7 +208,7 @@ function Preview({ profile }: { profile: ImportedProfile }) {
     <Card className="flex flex-col gap-7">
       <div className="flex flex-col gap-1">
         {/* Takes focus when the preview appears (E11-3). */}
-        <h2 tabIndex={-1} className="font-serif text-section">
+        <h2 tabIndex={-1} className="font-heading text-section">
           Here&apos;s what your resume says
         </h2>
         <p className="text-meta text-muted">{importCounts(profile)}. Anything marked “check” isn&apos;t in the file word for word.</p>

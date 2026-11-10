@@ -23,18 +23,18 @@ export function SettingsScreen({ section, children }: { section: SettingsSection
       <PageHeader
         title="Settings"
         description="It's your server, so it's your call. Choose which AI writes for you, set your document defaults, and take your data with you whenever you like."
-        actions={<SavedIndicator status={saves.status} savedAt={saves.savedAt} />}
+        actions={section === "appearance" ? <span className="text-meta text-muted">Browser appearance</span> : <SavedIndicator status={saves.status} savedAt={saves.savedAt} />}
       />
-      <div className="flex flex-wrap items-start gap-x-12 gap-y-8 px-10 pb-20">
-        <nav aria-label="Settings sections" className="flex max-w-[220px] min-w-[200px] flex-[1_1_200px] flex-col gap-0.5">
+      <div className="app-settings-layout flex flex-wrap items-start gap-x-12 gap-y-8 px-10 pb-20">
+        <nav aria-label="Settings sections" className="app-settings-nav flex max-w-[220px] min-w-[200px] flex-[1_1_200px] flex-col gap-0.5">
           {SETTINGS_SECTIONS.map((entry) => (
             <Link
               key={entry.id}
               href={settingsSectionHref(entry.id)}
               aria-current={entry.id === section ? "page" : undefined}
               className={cn(
-                "rounded-control px-3 py-[9px] text-sm text-ink hover:bg-hover hover:text-ink",
-                entry.id === section && "bg-selected font-medium hover:bg-selected",
+                "rounded-control px-3 py-[9px] text-sm hover:bg-hover hover:text-ink",
+                entry.id === section ? "bg-selected font-medium text-primary-text hover:bg-selected" : "text-ink",
               )}
             >
               {entry.label}
@@ -51,7 +51,7 @@ export function SettingsScreen({ section, children }: { section: SettingsSection
 export function SettingsSectionIntro({ title, children }: { title: string; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
-      <h2 className="font-serif text-section">{title}</h2>
+      <h2 className="font-heading text-section">{title}</h2>
       {children && <p className="text-sm text-pretty text-muted">{children}</p>}
     </div>
   );

@@ -139,7 +139,7 @@ export function ProfileEditor({ initial, section, order, sections }: { initial: 
           {section === "new" ? (
             <>
               <div className="flex flex-col gap-1.5">
-                <h2 className="font-serif text-section">Add a section</h2>
+                <h2 className="font-heading text-section">Add a section</h2>
                 <p className="text-sm text-pretty text-muted">Awards, talks, memberships: anything the other sections don&apos;t cover. It goes on resumes as you write it.</p>
               </div>
               <AddSectionForm
@@ -154,7 +154,7 @@ export function ProfileEditor({ initial, section, order, sections }: { initial: 
             current && (
               <>
             <div className="flex flex-col gap-1.5">
-              <h2 className="font-serif text-section">{current.title}</h2>
+              <h2 className="font-heading text-section">{current.title}</h2>
               <p className="text-sm text-pretty text-muted">
                 {current.optional && "Optional. "}
                 {current.hint}

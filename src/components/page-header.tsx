@@ -23,7 +23,7 @@ export function PageHeader({ title, description, actions, before }: PageHeaderPr
       <PageBar>
         <div className="flex min-w-0 items-center gap-3">
           {before ?? <PageBarIcon />}
-          <h1 className="font-serif text-title text-pretty">{title}</h1>
+          <h1 className="font-heading text-title text-pretty">{title}</h1>
         </div>
         {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
       </PageBar>

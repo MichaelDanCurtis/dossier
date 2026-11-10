@@ -23,7 +23,7 @@ export function ScreenMessage({
     <>
       {!standalone && <PageHeader title={title} />}
       <section className={standalone ? "flex max-w-[680px] flex-col items-start gap-3 px-10 pt-12 pb-16" : "flex max-w-[680px] flex-col items-start gap-3 px-10 pb-16"}>
-        {standalone && <h1 className="font-serif text-title text-pretty">{title}</h1>}
+        {standalone && <h1 className="font-heading text-title text-pretty">{title}</h1>}
         <div className="flex flex-col gap-2 text-lead text-pretty text-muted">{children}</div>
         <div className="mt-3 flex flex-wrap items-center gap-3">{actions}</div>
       </section>
