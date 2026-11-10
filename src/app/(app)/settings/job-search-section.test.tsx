@@ -97,7 +97,7 @@ describe("JobSearchSection", () => {
     render(<JobSearchSection initial={off} />);
     await userEvent.click(screen.getByRole("radio", { name: "Bundesagentur für Arbeit" }));
     expect(saveJobSource).not.toHaveBeenCalled();
-    expect(screen.getByText(/has no official API\. Dossier searches it through the access its own job search uses, without its permission/)).toBeInTheDocument();
+    expect(screen.getByText(/has no official API\. CareerAI searches it through the access its own job search uses, without its permission/)).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /The BA's terms of use/ })).toHaveAttribute("href", "https://www.arbeitsagentur.de/datei/nutzungsbedingungen_ba036575.pdf");
     expect(screen.queryByRole("button", { name: "Test connection" })).not.toBeInTheDocument();
 
@@ -133,12 +133,12 @@ describe("JobSearchSection", () => {
 
   it("says which FreeHire it searches, with no key to ask for", () => {
     const { unmount } = render(<JobSearchSection initial={withSource({ source: "FREEHIRE" })} />);
-    expect(screen.getByText("No key needed. Dossier searches FreeHire's public catalogue at freehire.me.")).toBeInTheDocument();
+    expect(screen.getByText("No key needed. CareerAI searches FreeHire's public catalogue at freehire.me.")).toBeInTheDocument();
     expect(screen.queryByLabelText(/key/i)).not.toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Test connection" })).toBeInTheDocument();
     unmount();
     render(<JobSearchSection initial={withSource({ source: "FREEHIRE", freehire: { host: "jobs.example" } })} />);
-    expect(screen.getByText("No key needed. Dossier searches your own FreeHire at jobs.example.")).toBeInTheDocument();
+    expect(screen.getByText("No key needed. CareerAI searches your own FreeHire at jobs.example.")).toBeInTheDocument();
   });
 
   it("shows keys from the environment and keys that can't be read", () => {

@@ -36,7 +36,7 @@ function hint(kind: AiErrorKind, choice: AiChoice): string | null {
     case "rate-limited":
       return "This usually means there's no credit on the account yet. Add some, wait a minute, and check again.";
     case "unreachable":
-      return `Dossier couldn't reach ${choice.name}. Check that this server is online, then try again.`;
+      return `CareerAI couldn't reach ${choice.name}. Check that this server is online, then try again.`;
     case "model":
       return "Choose a model from the list, then check again. If the server cannot list models, enter its model name.";
     default:
@@ -60,7 +60,7 @@ export function AiStep({ current }: { current: AiStepView }) {
     return (
       <Card className="flex flex-col items-start gap-3">
         <p className="text-sm">
-          Dossier already writes with <strong className="font-medium">{current.name}</strong>
+          CareerAI already writes with <strong className="font-medium">{current.name}</strong>
           {current.model && (
             <>
               , using <span className="font-mono text-[13px]">{current.model}</span>
@@ -225,9 +225,9 @@ function ChoicePanel({ choice, onConnected }: { choice: AiChoice; onConnected: (
         )}
         {status.state === "missing" && (
           <div className="flex flex-col gap-1.5 rounded-card bg-warning-surface px-4 py-3 text-warning">
-            <p className="font-medium">Dossier couldn&apos;t find {choice.name}.</p>
+            <p className="font-medium">CareerAI couldn&apos;t find {choice.name}.</p>
             <p>
-              Check that it&apos;s running{choice.id === "lmstudio" ? ", with its server switched on in the Developer tab" : ""}, then try again. If Dossier runs on a
+              Check that it&apos;s running{choice.id === "lmstudio" ? ", with its server switched on in the Developer tab" : ""}, then try again. If CareerAI runs on a
               server rather than this computer, it can&apos;t reach {choice.name} here: pick another option, or see the wiki to run a model on the server.
             </p>
           </div>
@@ -239,7 +239,7 @@ function ChoicePanel({ choice, onConnected }: { choice: AiChoice; onConnected: (
             </p>
           ) : (
             <div className="flex flex-col gap-3">
-              <p className="text-success">Found {choice.name}. Dossier will write with the model below.</p>
+              <p className="text-success">Found {choice.name}. CareerAI will write with the model below.</p>
               <Select label="Model" value={status.model ?? ""} onChange={(event) => void chooseModel(event.target.value)} className="max-w-[420px]">
                 {status.models.map((model) => (
                   <option key={model} value={model}>

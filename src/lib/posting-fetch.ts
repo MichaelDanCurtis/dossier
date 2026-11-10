@@ -19,13 +19,13 @@ import { appVersion } from "@/lib/version";
 
 export const FETCH_MESSAGES = {
   notWeb: "That link doesn't look like a web address.",
-  privateAddress: "Dossier doesn't fetch addresses on your own network. Paste the posting instead.",
+  privateAddress: "CareerAI doesn't fetch addresses on your own network. Paste the posting instead.",
   unreachable: "The job site couldn't be reached. Without internet access, or if the site blocks it, paste the posting instead.",
   failed: (status: number) => `The job site answered with an error (${status}). Paste the posting instead.`,
   tooBig: "That page is too big to be a job posting. Paste the posting instead.",
   notPage: "That link isn't a web page. Paste the posting instead.",
   unreadable:
-    "There's no posting text on that page that Dossier can read: the site probably builds it in the browser. Paste the posting instead.",
+    "There's no posting text on that page that CareerAI can read: the site probably builds it in the browser. Paste the posting instead.",
 };
 
 const TIMEOUT_MS = 10_000;

@@ -24,7 +24,7 @@ export default async function AuthorizePage({ searchParams }: PageProps<"/oauth/
         <div className="flex items-center gap-3">
           <BrandMark className="size-10" />
           <h1 className="font-heading text-[26px] font-medium tracking-[-0.01em]">
-            Connect {"error" in checked ? "an app" : checked.clientName} to Dossier
+            Connect {"error" in checked ? "an app" : checked.clientName} to CareerAI
           </h1>
         </div>
         {"error" in checked ? (
@@ -35,7 +35,7 @@ export default async function AuthorizePage({ searchParams }: PageProps<"/oauth/
           <>
             <div className="flex flex-col gap-3 text-sm leading-[1.6] text-pretty">
               <p>
-                <strong>{checked.clientName}</strong> wants to use your Dossier. Once you allow it, it can:
+                <strong>{checked.clientName}</strong> wants to use your CareerAI. Once you allow it, it can:
               </p>
               <ul className="list-disc pl-5 text-muted">
                 <li>search for jobs with your job source, and score postings against your profile</li>
@@ -43,7 +43,7 @@ export default async function AuthorizePage({ searchParams }: PageProps<"/oauth/
                 <li>save applications it writes for you as drafts, and change their status</li>
               </ul>
               <p className="text-muted">
-                It can never send an application or an email, or delete anything. Allow it only if you&apos;ve just added Dossier to{" "}
+                It can never send an application or an email, or delete anything. Allow it only if you&apos;ve just added CareerAI to{" "}
                 {checked.clientName} yourself: it sends you back to <strong className="text-ink">{new URL(checked.redirectUri).host}</strong>.
                 Disconnect every app in Settings → MCP connector at any time.
               </p>

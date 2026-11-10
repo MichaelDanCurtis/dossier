@@ -69,7 +69,7 @@ export function createOAuth({ origin, databasePath = ':memory:', connector, now 
     close: () => db.close(),
     metadata(pathname) {
       if (/^\/\.well-known\/oauth-authorization-server(?:\/.*)?$/.test(pathname) || pathname === '/api/oauth/metadata') return authorizationMetadata;
-      if (/^\/\.well-known\/oauth-protected-resource(?:\/.*)?$/.test(pathname) || pathname === '/api/oauth/protected-resource') return { resource, authorization_servers: [origin], scopes_supported: ['dossier'], bearer_methods_supported: ['header'], resource_name: 'Dossier private workspace' };
+      if (/^\/\.well-known\/oauth-protected-resource(?:\/.*)?$/.test(pathname) || pathname === '/api/oauth/protected-resource') return { resource, authorization_servers: [origin], scopes_supported: ['dossier'], bearer_methods_supported: ['header'], resource_name: 'CareerAI private workspace' };
       return null;
     },
     async register(value, config) {

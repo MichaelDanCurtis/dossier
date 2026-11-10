@@ -49,7 +49,7 @@ export async function scheduleInterview(applicationId: string, start: Date): Pro
 /** What happened in the calendar: nothing while it isn't in use, else the event's link while there is one. */
 export type CalendarSync = { inCalendar: boolean; eventLink: string | null };
 
-/** Whether Dossier keeps interviews in the calendar: connected, allowed, and switched on in Settings → Google. */
+/** Whether CareerAI keeps interviews in the calendar: connected, allowed, and switched on in Settings → Google. */
 async function calendarInUse(): Promise<{ calendarId: string } | null> {
   const [connection, settings] = await Promise.all([googleConnection(), loadSettings()]);
   if (connection.status !== "connected" || !connection.canUseCalendar || !settings.calendarEvents) return null;
@@ -61,7 +61,7 @@ const eventFor = (application: { id: string; company: string; role: string; titl
   return {
     applicationId: application.id,
     summary: `Interview · ${what || "application"}`,
-    description: `Added by Dossier for your application${application.company ? ` to ${application.company}` : ""}.`,
+    description: `Added by CareerAI for your application${application.company ? ` to ${application.company}` : ""}.`,
   };
 };
 

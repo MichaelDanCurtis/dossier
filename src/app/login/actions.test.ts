@@ -96,7 +96,7 @@ describe("signIn", () => {
     await expect(signIn({ password: "correct horse", remember: false })).resolves.toEqual({
       ok: false,
       error:
-        "Too many wrong passwords were tried lately, so new browsers have to wait 15 minutes. A browser you've signed in with before can sign in now, and restarting Dossier ends the wait.",
+        "Too many wrong passwords were tried lately, so new browsers have to wait 15 minutes. A browser you've signed in with before can sign in now, and restarting CareerAI ends the wait.",
     });
     expect(passwordMatches).not.toHaveBeenCalled();
   });

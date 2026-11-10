@@ -1,6 +1,6 @@
-# Private fork: Career workspace and opportunity workflows
+# CareerAI: Career workspace and opportunity workflows
 
-This fork adds first usable versions of the private roadmap ideas. They share the existing account-specific application and database. New provider keys, Google connections and MCP tokens are not required by this change.
+CareerAI is our private fork of [Dossier](https://github.com/AienTech/dossier), licensed under AGPL-3.0. It adds first usable versions of the private roadmap ideas. They share the existing account-specific application and database. New provider keys, Google connections and MCP tokens are not required by this change.
 
 ## Career
 
@@ -49,3 +49,7 @@ The ZIP is a working static site and a handoff for Codex/Claude Code customizati
 Private exports are version 12 and include career provenance, variants/versions, package history, and company-board configuration. Older backups load without these histories. Private exports carry each immutable package photo once and verify its content hash when restoring, keeping repeated images out of every serialized package. Public company caches, leases, validators, active job IDs and acknowledgement hashes are not restored; they must be rebuilt or reviewed again. Account-data deletion clears the new tables. The local roadmap, work directory, fixture credentials and private planning artifacts remain excluded from Git and deployment archives.
 
 New source is staged in the fork first. Feature proposals upstream follow real trial and feedback, rather than being filed as part of implementation. The upstream bug-fix PRs remain separate.
+
+## Local branding
+
+CareerAI names this private fork in the app, sign-in/admin pages, browser titles and connector descriptions. The upstream project and release notices retain Dossier attribution. Existing domains, cookie names, environment variables, database/export formats, OAuth scopes and MCP tool identifiers remain compatible.

@@ -208,7 +208,7 @@ export const testOpenaiDecisions = action(z.object({}), async () => {
   if (decisions.problem !== null) return { connected: false as const, message: decisions.problem };
   const started = performance.now();
   try {
-    const { model } = await askDecisions({ state: { message: "Dossier is checking its connection to OpenAI Decisions." }, questions: { check: { type: "noul", instructions: "Is the message about checking a connection?" } } }, { key: decisions.key, timeoutMs: TEST_TIMEOUT_MS, retryDelaysMs: [] });
+    const { model } = await askDecisions({ state: { message: "CareerAI is checking its connection to OpenAI Decisions." }, questions: { check: { type: "noul", instructions: "Is the message about checking a connection?" } } }, { key: decisions.key, timeoutMs: TEST_TIMEOUT_MS, retryDelaysMs: [] });
     return { connected: true as const, model, seconds: Math.round((performance.now() - started) / 100) / 10 };
   } catch (error) {
     if (error instanceof AiError) return { connected: false as const, message: error.message };
@@ -223,7 +223,7 @@ export const testJev = action(z.object({}), async () => {
   const started = performance.now();
   try {
     const { model } = await askJev(
-      { state: "Dossier is checking that it can reach Jev.", questions: { check: { type: "noul", instructions: "Is this text about checking a connection?" } } },
+      { state: "CareerAI is checking that it can reach Jev.", questions: { check: { type: "noul", instructions: "Is this text about checking a connection?" } } },
       { key: jev.key, timeoutMs: TEST_TIMEOUT_MS, retryDelaysMs: [] },
     );
     return { connected: true as const, model, seconds: Math.round((performance.now() - started) / 100) / 10 };
@@ -364,7 +364,7 @@ export const setConnector = action(z.object({ on: z.boolean() }), async ({ on })
 export const disconnectApps = action(z.object({}), async (_input, { toast }) => {
   if (!(await loadSettings()).connectorEnabledAt) throw new ActionError("The MCP connector is off already.");
   await saveSettings({ connectorEnabledAt: new Date().toISOString() });
-  toast("Every app is disconnected. Connect again from an app to use Dossier there.");
+  toast("Every app is disconnected. Connect again from an app to use CareerAI there.");
   return null;
 });
 

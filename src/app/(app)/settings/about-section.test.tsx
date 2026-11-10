@@ -26,7 +26,7 @@ describe("About (E10-9)", () => {
   it("lists the install's facts", () => {
     render(<AboutSection facts={facts} usagePing={ping} updates={updates} />);
     expect(screen.getByRole("heading", { name: "About this install" })).toBeInTheDocument();
-    expect(screen.getByText("Free and open source. No accounts, no subscriptions.")).toBeInTheDocument();
+    expect(screen.getByText("CareerAI is our private fork of Dossier. Free and open source under AGPL-3.0.")).toBeInTheDocument();
     expect(screen.getAllByRole("definition").map((value) => value.textContent)).toEqual(["0.1.0", "PostgreSQL · 9.0 MB"]);
     expect(screen.getByText("PostgreSQL · 9.0 MB")).toHaveClass("font-mono");
     expect(checkUpdates).not.toHaveBeenCalled();
@@ -38,7 +38,7 @@ describe("About (E10-9)", () => {
     const toggle = screen.getByRole("switch", { name: "Send the daily usage ping" });
     expect(toggle).toHaveAttribute("aria-checked", "true");
     expect(toggle).toHaveAccessibleDescription(
-      "On. Once on each day Dossier is used, the server sends telemetry.example.com this install's ID (6f1c0e5a-9b1d-4c3e-8f2a-1d2e3f4a5b6c) and the version number. Nothing else.",
+      "On. Once on each day CareerAI is used, the server sends telemetry.example.com this install's ID (6f1c0e5a-9b1d-4c3e-8f2a-1d2e3f4a5b6c) and the version number. Nothing else.",
     );
     await user.click(toggle);
     expect(chooseUsagePing).toHaveBeenCalledWith({ send: false });
@@ -71,10 +71,10 @@ describe("About (E10-9)", () => {
     render(<AboutSection facts={facts} usagePing={ping} updates={updates} />);
     const toggle = screen.getByRole("switch", { name: "Check for updates daily" });
     expect(toggle).toHaveAttribute("aria-checked", "true");
-    expect(toggle).toHaveAccessibleDescription(/asks GitHub for the latest release, and the sidebar says when a newer one is out/);
+    expect(toggle).toHaveAccessibleDescription(/asks GitHub for the latest upstream Dossier release, and the sidebar says when a newer one is out/);
     await user.click(toggle);
     expect(updateSettings).toHaveBeenCalledWith({ updateCheck: false });
-    expect(toggle).toHaveAccessibleDescription("Off. Dossier only checks when you press Check for updates.");
+    expect(toggle).toHaveAccessibleDescription("Off. CareerAI only checks when you press Check for updates.");
   });
 
   it("switches back when the change isn't saved", async () => {

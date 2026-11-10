@@ -18,12 +18,12 @@ export const SCORER_INFO: Record<Scorer, { name: string; description: string; ta
   },
   JEV: {
     name: "Jev by TypeSafe",
-    description: "A model made for quick judgments. It answers questions about the posting, and Dossier builds the score and the reasons from the posting's own lines.",
+    description: "A model made for quick judgments. It answers questions about the posting, and CareerAI builds the score and the reasons from the posting's own lines.",
     tag: "Needs a TypeSafe key",
   },
   OPENAI_DECISIONS: {
     name: "OpenAI Decisions",
-    description: "GPT-6 Luna evaluates the posting against your profile using a scoring rubric. Dossier builds reasons from the posting’s own lines.",
+    description: "GPT-6 Luna evaluates the posting against your profile using a scoring rubric. CareerAI builds reasons from the posting’s own lines.",
     tag: "Needs an OpenAI API key",
   },
 };

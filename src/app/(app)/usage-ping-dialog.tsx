@@ -51,7 +51,7 @@ export function UsagePingDialog({ host }: { host: string }) {
           <Dialog.Description asChild>
             <div className="flex flex-col gap-2.5 text-sm text-muted">
               <p>
-                Once on each day you use Dossier, your server would send <span className="text-ink">{host}</span> a random install ID and
+                Once on each day you use CareerAI, your server would send <span className="text-ink">{host}</span> a random install ID and
                 the version number, so the project knows how many installs are in use and how often.
               </p>
               <ul className="flex list-disc flex-col gap-1 pl-5">

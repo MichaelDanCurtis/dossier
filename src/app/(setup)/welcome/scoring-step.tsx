@@ -26,13 +26,13 @@ const OPTIONS: readonly { value: Scorer; name: string; description: string; tag:
   {
     value: "JEV",
     name: "Jev by TypeSafe",
-    description: "A model made for quick yes-or-no judgments. Dossier builds the score from its answers, and the reasons quote the posting's own lines.",
+    description: "A model made for quick yes-or-no judgments. CareerAI builds the score from its answers, and the reasons quote the posting's own lines.",
     tag: "Needs a TypeSafe key · in early access",
   },
   {
     value: "OPENAI_DECISIONS",
     name: "OpenAI Decisions",
-    description: "GPT-6 Luna evaluates a job-fit rubric. Dossier builds the score and reasons from its typed answers.",
+    description: "GPT-6 Luna evaluates a job-fit rubric. CareerAI builds the score and reasons from its typed answers.",
     tag: "Needs an OpenAI API key",
   },
 ];

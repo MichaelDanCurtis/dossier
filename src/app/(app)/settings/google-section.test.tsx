@@ -48,7 +48,7 @@ describe("GoogleSection (E15-1)", () => {
   });
 
   it("asks to connect again once Google refuses the saved access (#136)", () => {
-    const problem = "Google no longer accepts Dossier's access. Connect your Google account again.";
+    const problem = "Google no longer accepts CareerAI's access. Connect your Google account again.";
     render(
       <GoogleSection
         client={client}
@@ -58,7 +58,7 @@ describe("GoogleSection (E15-1)", () => {
         redirectUri={redirect}
       />,
     );
-    expect(screen.getByRole("alert")).toHaveTextContent("Until then, Dossier doesn't check your mail or calendar.");
+    expect(screen.getByRole("alert")).toHaveTextContent("Until then, CareerAI doesn't check your mail or calendar.");
     expect(screen.getByRole("link", { name: "Connect again" })).toHaveAttribute("href", "/api/google/connect");
   });
 

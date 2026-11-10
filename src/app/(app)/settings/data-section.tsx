@@ -256,7 +256,7 @@ export function DataSection({
               nightly
                 ? `Kept for ${backups.retentionDays} days in ${backups.dir}. ${
                     backups.lastRun ? `Last one ran ${backups.lastRun}.` : "The first one runs tonight at 03:00."
-                  }${backups.onlyWhileOpen ? " On this computer, they only run while Dossier is open: a night it was closed is made up soon after you open it." : ""}`
+                  }${backups.onlyWhileOpen ? " On this computer, they only run while CareerAI is open: a night it was closed is made up soon after you open it." : ""}`
                 : "Off. You'll only have what you export yourself."
             }
             checked={nightly}

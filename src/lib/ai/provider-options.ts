@@ -42,7 +42,7 @@ export const PROVIDER_OPTIONS: readonly {
     defaultUrl: "http://localhost:11434",
     urlPlaceholder: "http://localhost:11434",
     urlHint:
-      "Dossier in Docker? There, localhost is Dossier's own container: use http://host.docker.internal:11434 for Ollama on this computer, or http://ollama:11434 for the Compose service.",
+      "CareerAI in Docker? There, localhost is CareerAI's own container: use http://host.docker.internal:11434 for Ollama on this computer, or http://ollama:11434 for the Compose service.",
     defaultModel: "",
     apiKey: null,
   },
@@ -57,7 +57,7 @@ export const PROVIDER_OPTIONS: readonly {
     defaultUrl: "http://host.docker.internal:1234",
     urlPlaceholder: "http://host.docker.internal:1234",
     urlHint:
-      "That's LM Studio on the computer Dossier's Docker runs on; without Docker, use http://localhost:1234. Can't connect? Start the server in LM Studio's Developer tab, and turn on Serve on Local Network there.",
+      "That's LM Studio on the computer CareerAI's Docker runs on; without Docker, use http://localhost:1234. Can't connect? Start the server in LM Studio's Developer tab, and turn on Serve on Local Network there.",
     defaultModel: "",
     apiKey: { label: "API token", hint: "Only needed if you've turned on authentication in LM Studio's server settings." },
   },

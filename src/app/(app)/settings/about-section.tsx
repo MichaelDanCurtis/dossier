@@ -72,7 +72,7 @@ export function AboutSection({ facts, usagePing, updates }: { facts: AboutFacts;
     : fromEnv
       ? `Set with DOSSIER_TELEMETRY=${usagePing.choice} on the server, which decides while it's set. Change it there.`
       : pinging
-        ? `On. Once on each day Dossier is used, the server sends ${usagePing.host} ${usagePing.id ? `this install's ID (${usagePing.id})` : "this install's ID, made with the first ping,"} and the version number. Nothing else.`
+        ? `On. Once on each day CareerAI is used, the server sends ${usagePing.host} ${usagePing.id ? `this install's ID (${usagePing.id})` : "this install's ID, made with the first ping,"} and the version number. Nothing else.`
         : answered
           ? "Off. Nothing is sent, and this install's ID is forgotten."
           : "Not answered yet, so nothing is sent.";
@@ -95,7 +95,7 @@ export function AboutSection({ facts, usagePing, updates }: { facts: AboutFacts;
 
   return (
     <>
-      <SettingsSectionIntro title="About this install">Free and open source. No accounts, no subscriptions.</SettingsSectionIntro>
+      <SettingsSectionIntro title="About this install">CareerAI is our private fork of Dossier. Free and open source under AGPL-3.0.</SettingsSectionIntro>
       <Card padding="none" className="px-7 py-2">
         <dl>
           {facts.map(({ label, value }) => (
@@ -129,8 +129,8 @@ export function AboutSection({ facts, usagePing, updates }: { facts: AboutFacts;
           label="Check for updates daily"
           description={
             daily
-              ? "Once on each day Dossier is used, the server asks GitHub for the latest release, and the sidebar says when a newer one is out."
-              : "Off. Dossier only checks when you press Check for updates."
+              ? "Once on each day CareerAI is used, the server asks GitHub for the latest upstream Dossier release, and the sidebar says when a newer one is out."
+              : "Off. CareerAI only checks when you press Check for updates."
           }
           checked={daily}
           onCheckedChange={switchDaily}
@@ -159,7 +159,7 @@ export function AboutSection({ facts, usagePing, updates }: { facts: AboutFacts;
           )}
         </p>
       </div>
-      <p className="text-meta text-muted">Checking asks GitHub for the latest release and sends nothing about you or this install, daily or when you press it.</p>
+      <p className="text-meta text-muted">Checking asks GitHub for the latest upstream Dossier release and sends nothing about you or this install, daily or when you press it.</p>
       <p className="text-meta text-muted">
         The usage ping only goes once you agree. It tells the Dossier project&apos;s maintainer, on the project&apos;s own server, how many installs are in use and how often. The ID is random and says nothing about you, and what&apos;s kept is deleted after a year. To have the rows already kept for this install removed sooner, note its ID, switch the ping off, and send the ID to{" "}
         <a href="mailto:dossier.app@pm.me" className={LINK}>

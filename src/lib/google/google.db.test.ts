@@ -211,9 +211,9 @@ describe("the inbox check (E15-3)", () => {
         return new Response(JSON.stringify({ error: "invalid_grant" }), { status: 400 });
       }),
     );
-    await expect(syncInbox()).rejects.toThrow("Google no longer accepts Dossier's access.");
+    await expect(syncInbox()).rejects.toThrow("Google no longer accepts CareerAI's access.");
     expect(await googleConnection()).toMatchObject({ status: "connected", signInProblem: expect.stringContaining("Connect your Google account again") });
-    await expect(syncInbox()).rejects.toThrow("Google no longer accepts Dossier's access.");
+    await expect(syncInbox()).rejects.toThrow("Google no longer accepts CareerAI's access.");
     expect(tokenCalls).toBe(1);
 
     await saveGoogleAccount({ email: "jane@gmail.com", refreshToken: "new-refresh", scopes });

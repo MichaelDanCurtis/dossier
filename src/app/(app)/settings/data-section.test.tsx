@@ -113,11 +113,11 @@ describe("Import (E10-6)", () => {
 
   it("shows why a file can't be imported", async () => {
     const user = userEvent.setup();
-    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: "That file isn't a Dossier export." }, { status: 400 })));
+    vi.stubGlobal("fetch", vi.fn(async () => Response.json({ error: "That file isn't a CareerAI export." }, { status: 400 })));
     try {
       const { container } = render(<DataSection jobRetentionHours={24} hasApiKey={false} exportName="x.json" backups={backups} />);
       await user.upload(container.querySelector("input[type=file]")!, file);
-      expect(toast).toHaveBeenLastCalledWith("That file isn't a Dossier export.");
+      expect(toast).toHaveBeenLastCalledWith("That file isn't a CareerAI export.");
       expect(screen.queryByRole("alertdialog")).not.toBeInTheDocument();
     } finally {
       vi.unstubAllGlobals();
@@ -154,10 +154,10 @@ describe("Nightly backups (E10-7)", () => {
     expect(screen.getByRole("switch")).toHaveAccessibleDescription("Kept for 14 days in /data/backups. The first one runs tonight at 03:00.");
   });
 
-  it("says on this computer that they only run while Dossier is open (#325)", () => {
+  it("says on this computer that they only run while CareerAI is open (#325)", () => {
     render(<DataSection jobRetentionHours={24} hasApiKey={false} exportName="x.json" backups={{ ...backups, onlyWhileOpen: true }} />);
     expect(screen.getByRole("switch")).toHaveAccessibleDescription(
-      "Kept for 14 days in /data/backups. Last one ran today at 03:00. On this computer, they only run while Dossier is open: a night it was closed is made up soon after you open it.",
+      "Kept for 14 days in /data/backups. Last one ran today at 03:00. On this computer, they only run while CareerAI is open: a night it was closed is made up soon after you open it.",
     );
   });
 

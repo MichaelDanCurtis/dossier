@@ -20,7 +20,7 @@ const handler = createMcpHandler(({ authInfo }) => createDossierServer(typeof au
 /** "Sign in first", with where the app finds out how (RFC 9728). Any MCP app gets it, not only Claude (#281). */
 function unauthorized(origin: string): Response {
   return Response.json(
-    { error: "invalid_token", error_description: "Connect this app to Dossier first." },
+    { error: "invalid_token", error_description: "Connect this app to CareerAI first." },
     { status: 401, headers: { "www-authenticate": `Bearer resource_metadata="${origin}/.well-known/oauth-protected-resource/api/mcp", scope="${SCOPE}"` } },
   );
 }
@@ -35,7 +35,7 @@ async function handle(request: Request): Promise<Response> {
     return await handler.fetch(request, { authInfo: { token: token!, clientId: access.clientId, scopes: [SCOPE], extra: { origin } } });
   } catch (error) {
     logServerError(`MCP connector ${mcpUrl(origin)}`, error);
-    return Response.json({ jsonrpc: "2.0", error: { code: -32603, message: "Dossier couldn't answer that." }, id: null }, { status: 500 });
+    return Response.json({ jsonrpc: "2.0", error: { code: -32603, message: "CareerAI couldn't answer that." }, id: null }, { status: 500 });
   }
 }
 
