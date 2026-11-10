@@ -30,6 +30,10 @@ describe("stored settings", () => {
   it("reads an empty table as the prototype's defaults", () => {
     expect(settingsFromRows([])).toEqual({
       setupGuide: null,
+      activeResumeVariantId: null,
+      careerPreferencesId: null,
+      careerReviewCadence: "off",
+      careerReviewPaused: false,
       resumeSections: DEFAULT_SECTION_LAYOUT,
       fitBaseResume: false,
       provider: null,

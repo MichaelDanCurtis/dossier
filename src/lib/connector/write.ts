@@ -9,7 +9,7 @@ import { createApplicationFromDocuments } from "@/lib/application-create";
 import { SIGN_OFF_UNIT, unitsSchema, type Extracted, type Match, type Unit } from "@/lib/application-data";
 import { documentLabels } from "@/lib/document-labels";
 import { FRAME_LABELS, isFrameUnit } from "@/lib/letter-frame";
-import { loadProfile } from "@/lib/profile-data";
+import { loadResumeContext } from "@/lib/resume-variant-data";
 import { withoutSectionsOff } from "@/lib/resume-sections";
 import { loadSettings } from "@/lib/settings-data";
 import { TONES } from "@/lib/tones";
@@ -100,7 +100,8 @@ export function letterUnits(letter: z.output<typeof writtenLetterSchema>, signOf
 
 /** Saves an application Claude wrote; returns its id and the parts marked "check this". */
 export async function saveWrittenApplication(input: WrittenApplication): Promise<{ applicationId: string; unverified: { part: string; items: string[] }[] }> {
-  const [fullProfile, settings] = await Promise.all([loadProfile(), loadSettings()]);
+  const [resumeContext, settings] = await Promise.all([loadResumeContext(), loadSettings()]);
+  const fullProfile = resumeContext.profile;
   // A section that's off on the base resume isn't on it (#297).
   const profile = withoutSectionsOff(fullProfile, settings.resumeSections);
   const { details } = input;
@@ -133,7 +134,7 @@ export async function saveWrittenApplication(input: WrittenApplication): Promise
 
   const applicationId = await createApplicationFromDocuments({
     reading: { posting: input.posting, extracted, extractedWith: WRITTEN_IN_CLAUDE, matchedWith: WRITTEN_IN_CLAUDE },
-    documents: { resume, resumeWith: WRITTEN_IN_CLAUDE, letter, letterWith: WRITTEN_IN_CLAUDE },
+    documents: { resumeContext, resume, resumeWith: WRITTEN_IN_CLAUDE, letter, letterWith: WRITTEN_IN_CLAUDE },
     match,
     details: {
       title: details.title?.trim() || [details.role, details.company].filter((part) => part.trim()).join(" · "),

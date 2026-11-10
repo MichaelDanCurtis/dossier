@@ -20,6 +20,10 @@ export async function register() {
     const { freezeSentApplications } = await import("@/lib/frozen-copy");
     await freezeSentApplications().catch((error: unknown) => logServerError("startup", error));
 
+    // Existing Sent records supply their available frozen copy to employer history.
+    const { backfillSentApplicationPackages } = await import("@/lib/application-package");
+    await backfillSentApplicationPackages().catch((error: unknown) => logServerError("employer history", error));
+
     // Finished jobs, with what they were given and wrote, are deleted after a while.
     const { startJobSweep } = await import("@/lib/jobs/retention");
     startJobSweep();
@@ -35,6 +39,13 @@ export async function register() {
     // The job agent's daily run, while it's on (E16-4).
     const { startAgentSchedule } = await import("@/lib/agent/schedule");
     startAgentSchedule();
+
+    const { startCompanyBoardSchedule } = await import("@/lib/company-boards/schedule");
+    startCompanyBoardSchedule();
+
+    // Optional private career check-ins; off until enabled in Career.
+    const { startCareerSchedule } = await import("@/lib/career/schedule");
+    startCareerSchedule();
 
     // Startups' daily refresh, once it was refreshed by hand and while the screen is in use (#222).
     const { startStartupsSchedule } = await import("@/lib/startups/schedule");

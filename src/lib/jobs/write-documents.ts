@@ -7,6 +7,7 @@ import { getAiProvider } from "@/lib/ai";
 import { loadTaskOptions } from "@/lib/ai/task-options";
 import { tailorResume, writeCoverLetter } from "@/lib/ai/tasks";
 import { extractedSchema, matchSchema, unitsSchema } from "@/lib/application-data";
+import { resumeContextSchema } from "@/lib/resume-variants";
 import { loadProfile } from "@/lib/profile-data";
 import { withoutSectionsOff } from "@/lib/resume-sections";
 import { DOCUMENTS_TO_WRITE } from "@/lib/settings";
@@ -27,6 +28,7 @@ export const writeDocumentsJob = defineJob({
   input: z.object({
     /** The job that read the posting; its result and input are the source of truth. */
     readJobId: z.string().min(1),
+    resumeContext: resumeContextSchema.optional(),
     posting: z.string().min(1),
     /** What was read, with the user's corrections (company, role…) for the prompts. */
     extracted: extractedSchema,
@@ -37,12 +39,13 @@ export const writeDocumentsJob = defineJob({
     /** Which documents to write (#367); the job agent and the connector write both. */
     write: z.enum(DOCUMENTS_TO_WRITE).default("both"),
   }),
-  result: z.object({ resume: unitsSchema, resumeWith: z.string(), letter: unitsSchema, letterWith: z.string() }),
-  async run({ posting, extracted, match, tone, note, write }, { step, signal }) {
+  result: z.object({ resume: unitsSchema, resumeWith: z.string(), letter: unitsSchema, letterWith: z.string(), resumeContext: resumeContextSchema.optional() }),
+  async run({ posting, extracted, match, tone, note, write, resumeContext }, { step, signal }) {
     await step(write === "letter" ? WRITE_DOCUMENTS_STEPS[1] : WRITE_DOCUMENTS_STEPS[0]);
     const [provider, options, fullProfile, settings] = await Promise.all([getAiProvider(), loadTaskOptions(), loadProfile(), loadSettings()]);
     // A section that's off on the base resume isn't written about (#297).
-    const profile = withoutSectionsOff(fullProfile, settings.resumeSections);
+    const profile = withoutSectionsOff(resumeContext?.profile ?? fullProfile, settings.resumeSections);
+    options.resumeFocus = resumeContext?.focus;
     // "Anything I should know?" is the application's first fact (APP-15).
     const facts = note.trim() ? [note.trim()] : [];
     const skipped = { data: [], promptVersion: "" };
@@ -55,7 +58,7 @@ export const writeDocumentsJob = defineJob({
     if (write === "both") await step(WRITE_DOCUMENTS_STEPS[1]);
     const letter = write === "resume" ? skipped : await writeCoverLetter(provider, { profile, extracted, match, tone, facts, posting }, { ...options, signal });
 
-    return { resume: resume.data, resumeWith: resume.promptVersion, letter: letter.data, letterWith: letter.promptVersion };
+    return { ...(resumeContext ? { resumeContext } : {}), resume: resume.data, resumeWith: resume.promptVersion, letter: letter.data, letterWith: letter.promptVersion };
   },
 });
 

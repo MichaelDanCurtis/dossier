@@ -459,6 +459,12 @@ enum FunnelStage {
 }
 
 model Application {
+  /// The exact focused profile used when generation began; null is the legacy full profile.
+  variantContextJson   String?
+  packageApprovalHash  String?
+  packageApprovalAt    DateTime?
+  packageSnapshots     ApplicationPackageSnapshot[]
+
   id                  String            @id @default(cuid())
   /// Whether the user made it, or the job agent prepared it (E16).
   origin              ApplicationOrigin @default(MANUAL)
@@ -658,6 +664,8 @@ model Note {
 
 /// The job sources Find jobs can search (E14-1 to E14-3).
 enum PostingSource {
+  DIRECT
+  LINKEDIN
   JSEARCH
   ADZUNA
   ARBEITSAGENTUR
@@ -1060,4 +1068,175 @@ model AiUsage {
   createdAt    DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// ─── Career conversations and reviewed proposals ────────────────────────────
+// Career history is durable; background Job inputs/results may expire.
+model CareerSession {
+  id               String   @id @default(cuid())
+  kind             String
+  title            String
+  state            String   @default("ACTIVE")
+  revision         Int      @default(0)
+  contextJson      String
+  linkedRecordId   String?
+  periodKey        String?  @unique
+  messages         CareerMessage[]
+  proposals        CareerProposal[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model CareerMessage {
+  id               String   @id @default(cuid())
+  sessionId        String
+  session          CareerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  ordinal          Int
+  role             String
+  origin           String   @default("USER")
+  text             String
+  requestId        String?
+  jobId            String?
+  finishing        Boolean  @default(false)
+  replyToId        String?  @unique
+  promptVersion    String?
+  createdAt        DateTime @default(now())
+
+  @@unique([sessionId, ordinal])
+  @@unique([sessionId, requestId])
+}
+
+model CareerProposal {
+  id               String   @id @default(cuid())
+  sessionId        String
+  session          CareerSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  generationKey    String
+  ordinal          Int
+  kind             String
+  status           String   @default("PENDING")
+  schemaVersion    Int      @default(1)
+  dataJson         String
+  sourceMessageIdsJson String @default("[]")
+  baselineHash     String?
+  appliedRecordId  String?
+  revision         Int      @default(0)
+  acceptedAt       DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([generationKey, ordinal])
+  @@index([kind, status, acceptedAt])
+}
+
+// ─── Resume presentation and immutable application packages ─────────────────
+model ResumeVariant {
+  id               String   @id @default(cuid())
+  name             String
+  focus            String   @default("")
+  selectionJson    String   @default("[]")
+  overridesJson    String   @default("[]")
+  revision         Int      @default(0)
+  versions         ResumeVariantVersion[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ResumeVariantVersion {
+  id               String   @id @default(cuid())
+  variantId        String
+  variant          ResumeVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+  revision         Int
+  name             String
+  focus            String
+  selectionJson    String
+  overridesJson    String
+  cause            String
+  createdAt        DateTime @default(now())
+
+  @@unique([variantId, revision])
+}
+
+/// Immutable reserved content; success is recorded separately after the side effect.
+model ApplicationPackageSnapshot {
+  id               String   @id @default(cuid())
+  applicationId    String?
+  application      Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  employerKey      String
+  company          String
+  role             String
+  variantName      String?
+  contentHash      String   @unique
+  schemaVersion    Int      @default(1)
+  snapshotJson     String
+  events           ApplicationPackageEvent[]
+  createdAt        DateTime @default(now())
+
+  @@index([employerKey, createdAt])
+}
+
+model ApplicationPackageEvent {
+  id               String   @id @default(cuid())
+  packageId        String
+  package          ApplicationPackageSnapshot @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  kind             String
+  createdAt        DateTime @default(now())
+
+  @@index([packageId, kind, createdAt])
+}
+
+// ─── Per-account public company feeds, separate from private saved postings ──
+model CompanyBoard {
+  id               String   @id @default(cuid())
+  platform         String
+  region           String   @default("global")
+  boardToken       String
+  company          String
+  enabled          Boolean  @default(false)
+  intervalHours    Int      @default(24)
+  lastAttempt      DateTime?
+  lastSuccess      DateTime?
+  nextCheckAt      DateTime?
+  error            String?
+  failureCount     Int      @default(0)
+  etag             String?
+  lastModified     String?
+  listingSchema    Int      @default(1)
+  listingJson      String?
+  listingAt        DateTime?
+  pendingListingJson String?
+  allowedDisappearanceHash String?
+  generation       Int      @default(0)
+  leaseToken       String?
+  leaseUntil       DateTime?
+  postings         CompanyPosting[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@unique([platform, region, boardToken])
+}
+
+model CompanyPosting {
+  id               String   @id @default(cuid())
+  boardId          String
+  board            CompanyBoard @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  externalId       String
+  originalUrl      String
+  applicationUrl   String
+  urlKey           String
+  postingJson      String
+  contentHash      String
+  sourceVersion    String   @default("")
+  needsDetails     Boolean  @default(false)
+  detailsCheckedAt DateTime?
+  detailRetryAt    DateTime?
+  detailError      String?
+  firstSeen        DateTime @default(now())
+  lastSeen         DateTime @default(now())
+  missingScans     Int      @default(0)
+  lastMissingAt    DateTime?
+  closedAt         DateTime?
+
+  @@unique([boardId, externalId])
+  @@index([urlKey])
+  @@index([boardId, needsDetails, detailRetryAt])
 }

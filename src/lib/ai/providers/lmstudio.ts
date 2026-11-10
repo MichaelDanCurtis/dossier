@@ -6,6 +6,7 @@ import type { UsageSink } from "@/lib/usage";
 
 import { AiError, toAiError } from "../errors";
 import type { ChatAnswer, ChatCall } from "../provider";
+import { budgetedAiFetch } from "../request-budget";
 import { keyGuardedFetch } from "./guarded-fetch";
 import { OpenAICompatibleProvider } from "./openai-compatible";
 
@@ -50,7 +51,7 @@ export class LmStudioProvider extends OpenAICompatibleProvider {
     const root = address.replace(/\/+$/, "").replace(/(\/api)?\/v1$/, "");
     super("LMSTUDIO", `${root}/v1`, apiKey, model, timeoutMs, onUsage);
     this.root = root;
-    this.api = apiKey ? keyGuardedFetch() : fetch;
+    this.api = apiKey ? keyGuardedFetch() : budgetedAiFetch;
   }
 
   protected override async chat(call: ChatCall): Promise<ChatAnswer> {

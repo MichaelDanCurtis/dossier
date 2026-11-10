@@ -129,6 +129,12 @@ export async function startJob<I, R>(
   return job.id;
 }
 
+/** Queue a job created atomically with durable feature state, after that transaction commits. */
+export function queueCommittedJob(id: string): void {
+  if (state.running.has(id)) return;
+  enqueue(id);
+}
+
 /** Runs a failed job again, as the same job with the same input. */
 export async function retryJob(id: string): Promise<boolean> {
   const { count } = await prisma.job.updateMany({

@@ -10,6 +10,7 @@ import { z } from "zod";
 import { DocumentKind } from "@/generated/prisma/enums";
 import { env } from "@/lib/env";
 import { resolveFileName } from "@/lib/file-name";
+import { reserveApplicationPackage, recordPackageOutcome, packagePrintPath } from "@/lib/application-package";
 import { renderPdf } from "@/lib/pdf/render";
 import { prisma } from "@/lib/prisma";
 import { loadProfileName } from "@/lib/profile-data";
@@ -94,6 +95,9 @@ export const zipPdfsJob = defineJob({
       loadProfileName(),
       loadSettings(),
     ]);
+    const prepared = new Map<string, Awaited<ReturnType<typeof reserveApplicationPackage>>>();
+    try {
+    for (const application of applications) prepared.set(application.id, await reserveApplicationPackage(application.id));
     const documents = applications.flatMap((application) => application.documents.map(({ kind }) => ({ application, kind })));
 
     let done = 0;
@@ -101,7 +105,7 @@ export const zipPdfsJob = defineJob({
     const rendered = await Promise.all(
       documents.map(async ({ application, kind }) => {
         signal.throwIfAborted();
-        const pdf = await renderPdf(`/print/${kind === DocumentKind.RESUME ? "resume" : "letter"}/${application.id}`);
+        const pdf = await renderPdf(packagePrintPath(prepared.get(application.id)!.id, kind === DocumentKind.RESUME ? "resume" : "letter"));
         done += 1;
         await step(`Rendered ${done} of ${documents.length}`);
         return { application, kind, pdf };
@@ -125,6 +129,11 @@ export const zipPdfsJob = defineJob({
     await mkdir(downloadsDir(), { recursive: true });
     const file = `${randomUUID()}.zip`;
     await writeFile(path.join(downloadsDir(), file), zipSync(files));
+    for (const item of prepared.values()) await recordPackageOutcome(item.id, "EXPORTED");
     return { file, fileName: zipFileName(now), documents: documents.length };
+    } catch (error) {
+      for (const item of prepared.values()) await recordPackageOutcome(item.id, "FAILED");
+      throw error;
+    }
   },
 });

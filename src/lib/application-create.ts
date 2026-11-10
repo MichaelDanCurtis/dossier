@@ -84,7 +84,7 @@ export async function createApplicationFromDocuments({ reading, documents, match
     }),
   );
   const summary = tailoringSummary({
-    profile,
+    profile: documents.resumeContext?.profile ?? profile,
     company: details.company,
     role: details.role,
     match,
@@ -126,6 +126,7 @@ export async function createApplicationFromDocuments({ reading, documents, match
         mode: details.mode,
         salary: details.salary,
         deadline: details.deadline ? new Date(`${details.deadline}T00:00:00Z`) : null,
+        variantContextJson: documents.resumeContext ? JSON.stringify({ ...documents.resumeContext, profile: { ...documents.resumeContext.profile, photo: null } }) : null,
         postingUrl,
         postingText: reading.posting,
         extracted,

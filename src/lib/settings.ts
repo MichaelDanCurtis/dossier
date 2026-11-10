@@ -156,6 +156,11 @@ export const settingsSchema = z.object({
   educationOrder: z.enum(["date", "manual"]).catch("date"),
   /** Where the setup guide was left (E21); null until it's first opened. */
   setupGuide: json(setupGuideSchema).nullable().catch(null),
+  /** Reviewed career preferences and optional in-app counseling; never resume facts. */
+  activeResumeVariantId: z.string().nullable().catch(null),
+  careerPreferencesId: z.string().nullable().catch(null),
+  careerReviewCadence: z.enum(["off", "weekly", "monthly"]).catch("off"),
+  careerReviewPaused: flag(false),
   /** The base resume's sections: their order and which are off (#297). */
   resumeSections: json(sectionLayoutSchema).catch(DEFAULT_SECTION_LAYOUT),
   /** "Fit to one page" on the base resume (public issue 69): spacing, then type, tightened until it fits. */

@@ -11,8 +11,10 @@ import { BUILT_IN_THEMES } from "@/lib/themes";
 import { themeFile } from "@/lib/theme-file";
 
 import { deleteTheme, duplicateTheme, importTheme, saveResumeSections, saveTheme, setBaseTheme, setFitBaseResume } from "./actions";
+import { startResumeCoach } from "./content-actions";
 import { ResumeWorkspace, type ResumeWorkspaceProps } from "./resume-workspace";
 
+vi.mock("./content-actions", () => ({ startResumeCoach: vi.fn(async () => ({ ok: true, data: { id: "coach-fixture" } })), createFocusResume: vi.fn(), saveFocusResume: vi.fn(), selectFocusResume: vi.fn(), restoreFocusResume: vi.fn() }));
 vi.mock("./actions", () => ({ setBaseTheme: vi.fn(), saveTheme: vi.fn(), duplicateTheme: vi.fn(), deleteTheme: vi.fn(), importTheme: vi.fn(), saveResumeSections: vi.fn(), setFitBaseResume: vi.fn() }));
 vi.mock("next/navigation", async (importOriginal) => ({ ...(await importOriginal<typeof import("next/navigation")>()), useRouter: () => ({ push: vi.fn() }) }));
 vi.mock("@/components/toast", () => {
@@ -87,7 +89,7 @@ describe("ResumeWorkspace", () => {
     render(<ResumeWorkspace {...props} />);
     expect(screen.getByRole("heading", { level: 1, name: "Base resume" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Edit profile" })).toHaveAttribute("href", "/profile");
-    expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute("href", "/api/pdf?doc=base");
+    expect(screen.getByRole("link", { name: "Download PDF" })).toHaveAttribute("href", "/api/pdf?doc=base&variant=base");
     expect(previewLabel()).toBe("Modern");
     expect(screen.getByText("A4 · 1 page")).toBeInTheDocument();
     expect(screen.getByRole("article", { name: "Resume" })).toHaveTextContent("Jane Doe");
@@ -263,4 +265,32 @@ describe("Fit to one page (public issue 69)", () => {
     await user.click(screen.getByRole("switch", { name: "Fit to one page" }));
     await waitFor(() => expect(screen.getByRole("switch", { name: "Fit to one page" })).toHaveAttribute("aria-checked", "false"));
   });
+});
+
+it("keeps unsaved wording across panel changes and cancels back to the last saved wording", async () => {
+  const user = userEvent.setup();
+  render(<ResumeWorkspace {...props} initialPanel="content" />);
+  const summary = screen.getByRole("textbox", { name: "Summary wording" });
+  await user.clear(summary); await user.type(summary, "Builds useful tools.");
+  expect(screen.getByRole("button", { name: "Save resume" })).toBeEnabled();
+  expect(screen.getByRole("tab", { name: "Coach" })).toBeDisabled();
+  await user.click(screen.getByRole("tab", { name: "Themes" }));
+  await user.click(screen.getByRole("tab", { name: "Content" }));
+  expect(screen.getByRole("textbox", { name: "Summary wording" })).toHaveValue("Builds useful tools.");
+  expect(screen.getByRole("button", { name: "Save resume" })).toBeEnabled();
+  await user.click(screen.getByRole("button", { name: "Cancel edits" }));
+  expect(screen.getByRole("textbox", { name: "Summary wording" })).toHaveValue(props.profile.basics.summary);
+});
+
+it("opens the coach after Discuss with AI and adopts reviewed wording without resetting the active panel", async () => {
+  const user = userEvent.setup();
+  const variant = { id: "base", name: "Base resume", focus: "", revision: 0, selection: [], overrides: [] };
+  const { rerender } = render(<ResumeWorkspace {...props} initialPanel="content" variant={variant} />);
+  await user.click(screen.getByRole("button", { name: "Discuss with AI" }));
+  expect(startResumeCoach).toHaveBeenCalledWith({ variantId: "base" });
+  expect(screen.getByRole("tab", { name: "Coach" })).toHaveAttribute("aria-selected", "true");
+  await user.click(screen.getByRole("tab", { name: "Content" }));
+  rerender(<ResumeWorkspace {...props} initialPanel="coach" variant={{ ...variant, revision: 1, overrides: [{ id: "summary", text: "Reviewed new summary." }] }} />);
+  expect(screen.getByRole("tab", { name: "Content" })).toHaveAttribute("aria-selected", "true");
+  expect(screen.getByRole("textbox", { name: "Summary wording" })).toHaveValue("Reviewed new summary.");
 });

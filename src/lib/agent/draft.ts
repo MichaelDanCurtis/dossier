@@ -16,6 +16,7 @@ import { writeDocumentsJob } from "@/lib/jobs/write-documents";
 import { logServerError } from "@/lib/log";
 import { dismissPosting, storePosting, unmarkPosting } from "@/lib/postings";
 import { prisma } from "@/lib/prisma";
+import { loadResumeContext } from "@/lib/resume-variant-data";
 import { loadSettings } from "@/lib/settings-data";
 
 import { DISMISSED_TRIM } from "./candidates";
@@ -87,7 +88,7 @@ export async function draftCandidate(candidateId: string, context: JobContext): 
     await context.step(`Writing the draft for ${name}`);
     const settings = await loadSettings();
     const documents = await writeDocumentsJob.run(
-      { readJobId: context.id, posting, extracted: reading.extracted, match: reading.match, tone: settings.defaultTone, note: "", write: "both" },
+      { resumeContext: await loadResumeContext(), readJobId: context.id, posting, extracted: reading.extracted, match: reading.match, tone: settings.defaultTone, note: "", write: "both" },
       context,
     );
     // Keep the whole text, so a retry doesn't fetch it again.

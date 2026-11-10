@@ -31,6 +31,7 @@ import { decryptApiKey } from "@/lib/ai/api-key";
 import { agentSearchInputSchema, MAX_AGENT_SEARCHES } from "@/lib/agent/search";
 import { decryptSecret, JOB_SOURCE_KEY } from "@/lib/secrets";
 import { appVersion } from "@/lib/version";
+import { buildWorkspaceExport, workspaceExportSchema } from "@/lib/workspace-export";
 
 // Everything a user keeps in Dossier as one JSON file (E10-4, SET-10): the
 // profile, custom themes, settings and applications with their history,
@@ -43,9 +44,9 @@ import { appVersion } from "@/lib/version";
 
 export const EXPORT_FORMAT = "dossier-export";
 /** Bump when the file's shape changes; imports refuse versions they don't know. 2 added Find jobs' postings and keys (E14-9), 3 projects (PRO-13) and the job agent (E16), 4 facts (PRO-14, APP-15), 5 publications (#218), the profile photo's theme and application options (#224) and Startups (#222), 6 the line about a role's company (#257), 7 skill groups (#280), 8 certifications (#293) and volunteering (#294), 9 resume section order (#297), custom sections (#298) and what sent applications were sent with (#299), and the board's order (public issue 60), 10 the tailored resume's score (#370), 11 the job agent's recurring searches and which found each candidate (public PR 61). */
-export const EXPORT_SCHEMA_VERSION = 11;
+export const EXPORT_SCHEMA_VERSION = 12;
 /** The versions imports can read. */
-export const EXPORT_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+export const EXPORT_SCHEMA_VERSIONS: readonly number[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 /** The setting that holds the encrypted API key, which only this server can read. */
 const API_KEY_SETTING = "apiKeyEnc";
@@ -238,6 +239,7 @@ const chatMessage = z.object({
 const note = z.object({ id: text, body: text, createdAt: date, updatedAt: date });
 const application = z.object({
   id: text,
+  variantContextJson: text.nullable().optional(),
   title: text,
   company: text,
   role: text,
@@ -384,7 +386,8 @@ const postingSearch = z.object({
 /** An export file as read back (E10-6). */
 export const exportSchema = z.object({
   format: z.literal(EXPORT_FORMAT),
-  schemaVersion: z.literal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]),
+  schemaVersion: z.literal([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]),
+  workspace: workspaceExportSchema.optional(),
   appVersion: text,
   exportedAt: date,
   profile: z.object({
@@ -423,7 +426,7 @@ export const exportSchema = z.object({
   /** Startups (#222), and hashes of the ones removed for good; absent in older files. */
   startups: z.array(startup).default([]),
   startupBlocks: z.array(z.object({ hash: text, createdAt: date })).default([]),
-});
+}).refine((data) => data.schemaVersion < 12 || data.workspace !== undefined, "This export is missing its career workspace history.");
 export type DossierExport = z.infer<typeof exportSchema>;
 
 /** "dossier-export-2026-09-28.json", dated in the server's time zone. */
@@ -461,7 +464,7 @@ export async function buildExport(
       tx.application.findMany({
         orderBy: { createdAt: "asc" },
         // The Gmail thread belongs to the mailbox, not the data (E15-2).
-        omit: { emailThreadId: true, interviewEventId: true, interviewCalendarId: true },
+        omit: { emailThreadId: true, interviewEventId: true, interviewCalendarId: true, packageApprovalHash: true, packageApprovalAt: true },
         include: {
           events: { omit: { applicationId: true }, orderBy: { at: "asc" } },
           documents: {
@@ -503,6 +506,7 @@ export async function buildExport(
     return {
       format: EXPORT_FORMAT,
       schemaVersion: EXPORT_SCHEMA_VERSION,
+      workspace: await buildWorkspaceExport(tx),
       appVersion,
       exportedAt: now,
       profile: {

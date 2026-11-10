@@ -16,6 +16,8 @@ const bulletLines = (bullets: string) =>
 
 /** How every task is run. */
 export type TaskOptions = {
+  /** User-selected emphasis, never evidence for a factual claim. */
+  resumeFocus?: string;
   /** SET-3: prompt wording for every provider, and a temperature where the model takes one. */
   creativity: "FAITHFUL" | "BALANCED" | "EXPRESSIVE";
   /** SET-4 "Never invent experience", on by default. */

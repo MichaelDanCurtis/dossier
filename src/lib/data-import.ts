@@ -1,4 +1,5 @@
 import "server-only";
+import { clearWorkspace, restoreWorkspace } from "@/lib/workspace-export";
 
 import { Prisma, type PrismaClient } from "@/generated/prisma/client";
 import { encryptApiKey } from "@/lib/ai/api-key";
@@ -107,6 +108,7 @@ export async function importExport(db: PrismaClient, data: DossierExport): Promi
       // Out with the old. Applications take their history, documents, chat,
       // notes and jobs along; the other jobs (a resume import, postings read
       // for applications never created) hold the old data too.
+      await clearWorkspace(tx);
       await tx.job.deleteMany();
       await tx.posting.deleteMany();
       await tx.postingSearch.deleteMany();
@@ -245,6 +247,7 @@ export async function importExport(db: PrismaClient, data: DossierExport): Promi
         })),
       });
       await tx.startupBlock.createMany({ data: [...new Map(startupBlocks.map((block) => [block.hash, block])).values()] });
+      await restoreWorkspace(tx, data.workspace);
     },
     // A big export takes longer than the default five seconds.
     { timeout: 120_000, maxWait: 10_000 },

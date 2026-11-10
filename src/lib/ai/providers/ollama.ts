@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import type { UsageSink } from "@/lib/usage";
 
+import { budgetedAiFetch } from "../request-budget";
 import { BaseProvider, withJsonSchema, type ChatAnswer, type ChatCall } from "../provider";
 
 /**
@@ -31,7 +32,7 @@ export class OllamaProvider extends BaseProvider {
   private client(signal: AbortSignal): Ollama {
     return new Ollama({
       host: this.host,
-      fetch: (input, init) => fetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal }),
+      fetch: (input, init) => budgetedAiFetch(input, { ...init, signal: init?.signal ? AbortSignal.any([init.signal, signal]) : signal }),
     });
   }
 

@@ -1,3 +1,4 @@
+import { budgetedAiFetch } from "../request-budget";
 import { AiError } from "../errors";
 
 /** Enough for a server that moves /v1 around; more is a loop. */
@@ -12,7 +13,7 @@ export const REDIRECT_REFUSED =
  * followed with the key attached. Same-origin redirects that keep the method
  * and body (307, 308) are still followed.
  */
-export function keyGuardedFetch(fetchImpl: typeof fetch = fetch): typeof fetch {
+export function keyGuardedFetch(fetchImpl: typeof fetch = budgetedAiFetch): typeof fetch {
   return async (input, init) => {
     let url = new URL(input instanceof Request ? input.url : String(input));
     for (let hops = 0; ; hops++) {

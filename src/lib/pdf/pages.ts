@@ -8,4 +8,9 @@ export function countPdfPages(pdf: Uint8Array): number {
 }
 
 /** The base resume's print path, squeezed `fit` steps for "Fit to one page" (public issue 69); the token is signed for exactly this. */
-export const printBasePath = (fit = 0) => (fit > 0 ? `/print/base?fit=${fit}` : "/print/base");
+export const printBasePath = (fit = 0, variant?: string) => {
+  const params = new URLSearchParams();
+  if (fit > 0) params.set("fit", String(fit));
+  if (variant) params.set("variant", variant);
+  return `/print/base${params.size ? `?${params}` : ""}`;
+};

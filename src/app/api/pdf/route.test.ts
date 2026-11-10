@@ -1,6 +1,8 @@
 import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { reserveApplicationPackage, recordPackageOutcome } from "@/lib/application-package";
+import { ActionError } from "@/lib/action";
 import { getSession } from "@/lib/auth/session";
 import { renderPdf } from "@/lib/pdf/render";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +13,7 @@ import { loadSettings } from "@/lib/settings-data";
 import { GET as GET_HELD } from "./[id]/route";
 import { GET, POST } from "./route";
 
+vi.mock("@/lib/application-package", async (original) => ({ ...(await original<typeof import("@/lib/application-package")>()), reserveApplicationPackage: vi.fn(), recordPackageOutcome: vi.fn(async () => {}) }));
 vi.mock("@/lib/auth/session", () => ({ getSession: vi.fn() }));
 vi.mock("@/lib/pdf/render", () => ({ renderPdf: vi.fn() }));
 vi.mock("@/lib/profile-data", () => ({ loadProfileName: vi.fn() }));
@@ -29,6 +32,8 @@ const getHeld = (url: string) => {
 };
 
 beforeEach(() => {
+  vi.mocked(reserveApplicationPackage).mockReset().mockResolvedValue({ id: "package-fixture", snapshot: { fileNamePattern: "{name} – {company} – {doc}", profile: { basics: { name: "Jane Doe" } }, company: "Ledgerly", role: "Senior Product Designer" } } as never);
+  vi.mocked(recordPackageOutcome).mockClear();
   vi.mocked(getSession).mockResolvedValue({ persistent: false, issuedAt: new Date(), expiresAt: new Date() });
   vi.mocked(renderPdf).mockResolvedValue(new Uint8Array([37, 80, 68, 70]));
   vi.mocked(loadProfileName).mockResolvedValue("Jane Doe");
@@ -96,11 +101,11 @@ describe("GET /api/pdf", () => {
 
   it("downloads an application's tailored resume and cover letter (APP-12)", async () => {
     const resume = await get("?doc=resume&application=app1");
-    expect(renderPdf).toHaveBeenLastCalledWith("/print/resume/app1");
+    expect(renderPdf).toHaveBeenLastCalledWith("/print/package/package-fixture/resume");
     expect(resume.headers.get("content-disposition")).toContain("filename*=UTF-8''Jane%20Doe%20%E2%80%93%20Ledgerly%20%E2%80%93%20Resume.pdf");
 
     const letter = await get("?doc=letter&application=app1");
-    expect(renderPdf).toHaveBeenLastCalledWith("/print/letter/app1");
+    expect(renderPdf).toHaveBeenLastCalledWith("/print/package/package-fixture/letter");
     expect(letter.headers.get("content-disposition")).toContain("Ledgerly%20%E2%80%93%20Cover%20letter.pdf");
     expect(prisma.application.findUnique).toHaveBeenLastCalledWith(
       expect.objectContaining({ where: { id: "app1" }, select: expect.objectContaining({ documents: { where: { kind: "COVER_LETTER" }, select: { id: true } } }) }),
@@ -131,7 +136,7 @@ describe("POST /api/pdf, then GET /api/pdf/{id}", () => {
     const { url } = (await response.json()) as { url: string };
     expect(url).toMatch(/^\/api\/pdf\/[0-9a-f-]{36}$/);
     expect(renderPdf).toHaveBeenCalledTimes(1);
-    expect(renderPdf).toHaveBeenCalledWith("/print/resume/app1");
+    expect(renderPdf).toHaveBeenCalledWith("/print/package/package-fixture/resume");
 
     const download = await getHeld(url);
     expect(download.status).toBe(200);
@@ -163,4 +168,15 @@ describe("POST /api/pdf, then GET /api/pdf/{id}", () => {
     expect((await getHeld("/api/pdf/anything")).status).toBe(401);
     expect(renderPdf).not.toHaveBeenCalled();
   });
+});
+
+it("blocks an inconsistent package before rendering and records no export on a failed render", async () => {
+  vi.mocked(reserveApplicationPackage).mockRejectedValueOnce(new ActionError("Review Employer history first."));
+  expect((await get("?doc=resume&application=abc")).status).toBe(409);
+  expect(renderPdf).not.toHaveBeenCalled();
+  expect(recordPackageOutcome).not.toHaveBeenCalled();
+  vi.mocked(renderPdf).mockRejectedValueOnce(new Error("Render failed"));
+  expect((await get("?doc=resume&application=abc")).status).toBe(500);
+  expect(recordPackageOutcome).toHaveBeenCalledWith("package-fixture", "FAILED");
+  expect(recordPackageOutcome).not.toHaveBeenCalledWith("package-fixture", "EXPORTED");
 });

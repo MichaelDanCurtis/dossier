@@ -19,7 +19,7 @@ vi.mock("@/lib/prisma", async () => {
 const dataDir = vi.hoisted(() => ({ path: "" }));
 vi.mock("@/lib/env", () => ({ env: { get DOSSIER_DATA_DIR() { return dataDir.path; } } }));
 vi.mock("@/lib/pdf/render", () => ({ renderPdf: vi.fn(async (page: string) => new TextEncoder().encode(`%PDF ${page}`)) }));
-vi.mock("@/lib/profile-data", () => ({ loadProfileName: async () => "Jane Doe" }));
+vi.mock("@/lib/profile-data", async (original) => ({ ...(await original<typeof import("@/lib/profile-data")>()), loadProfileName: async () => "Jane Doe" }));
 vi.mock("./runner", () => ({ defineJob: <T,>(definition: T) => definition }));
 
 const prisma = () => db.client!;
@@ -49,8 +49,11 @@ describe("zipPdfsJob (E10-5)", () => {
   it("zips every tailored document into a folder per company", async () => {
     const result = await zipPdfsJob.run({}, context);
     expect(result).toMatchObject({ documents: 5, fileName: expect.stringMatching(/^dossier-pdfs-\d{4}-\d{2}-\d{2}\.zip$/) });
-    expect(renderPdf).toHaveBeenCalledWith("/print/resume/a1");
-    expect(renderPdf).toHaveBeenCalledWith("/print/letter/a3");
+    const one = await prisma().applicationPackageSnapshot.findFirstOrThrow({ where: { applicationId: "a1" } });
+    const three = await prisma().applicationPackageSnapshot.findFirstOrThrow({ where: { applicationId: "a3" } });
+    expect(renderPdf).toHaveBeenCalledWith(`/print/package/${one.id}/resume`);
+    expect(renderPdf).toHaveBeenCalledWith(`/print/package/${three.id}/letter`);
+    expect(await prisma().applicationPackageEvent.count({ where: { kind: "EXPORTED" } })).toBe(3);
 
     const zip = unzipSync(await readFile(path.join(dataDir.path, "downloads", result.file)));
     expect(Object.keys(zip).sort()).toEqual([
@@ -60,7 +63,7 @@ describe("zipPdfsJob (E10-5)", () => {
       "Oaken Studio/Jane Doe – Oaken Studio – Cover letter.pdf",
       "Oaken Studio/Jane Doe – Oaken Studio – Resume.pdf",
     ]);
-    expect(new TextDecoder().decode(zip["Ledgerly/Jane Doe – Ledgerly – Resume.pdf"])).toBe("%PDF /print/resume/a1");
+    expect(new TextDecoder().decode(zip["Ledgerly/Jane Doe – Ledgerly – Resume.pdf"])).toBe(`%PDF /print/package/${one.id}/resume`);
     expect(steps).toEqual(["Rendering 5 documents", ...[1, 2, 3, 4, 5].map((n) => `Rendered ${n} of 5`), "Zipping"]);
     expect(await countTailoredDocuments()).toBe(5);
   });

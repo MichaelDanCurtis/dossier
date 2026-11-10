@@ -13,6 +13,7 @@ import { scorePastedPostingJob } from "@/lib/jobs/score-posting";
 import { startJob } from "@/lib/jobs/runner";
 import { writeDocumentsJob } from "@/lib/jobs/write-documents";
 import { fetchPosting } from "@/lib/posting-fetch";
+import { loadResumeContext } from "@/lib/resume-variant-data";
 import { prisma } from "@/lib/prisma";
 
 /** "Read the posting →": starts reading it in the background and returns the job's id (E7-2). */
@@ -86,7 +87,7 @@ export const startWritingDocuments = action(
       salary: orNull(details.salary),
       deadline: orNull(details.deadline),
     };
-    return startJob(writeDocumentsJob, { readJobId, posting: reading.input.posting, extracted, match, tone, note, write });
+    return startJob(writeDocumentsJob, { resumeContext: await loadResumeContext(), readJobId, posting: reading.input.posting, extracted, match, tone, note, write });
   },
 );
 
