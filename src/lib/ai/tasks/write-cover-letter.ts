@@ -23,7 +23,7 @@ import {
   type Task,
 } from "./prompt-parts";
 
-export const WRITE_COVER_LETTER_VERSION = "write-cover-letter@6";
+export const WRITE_COVER_LETTER_VERSION = "write-cover-letter@7";
 
 const answerSchema = z.object({
   recipient: z.string(),
@@ -80,6 +80,7 @@ export const writeCoverLetter: Task<CoverLetterInput, Unit[]> = async (provider,
           `The candidate's profile:\n${profileForPrompt(profile)}`,
           `The job:\n${jobForPrompt(extracted, match)}`,
           applicationFacts(facts),
+          options.resumeFocus ? `Preferred emphasis (not factual evidence; do not add claims): ${options.resumeFocus}` : "",
         ]
           .filter(Boolean)
           .join("\n\n"),

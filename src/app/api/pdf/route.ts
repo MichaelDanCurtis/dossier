@@ -1,5 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 
+import { ActionError } from "@/lib/action";
+import { reserveApplicationPackage, recordPackageOutcome, packagePrintPath } from "@/lib/application-package";
 import { DocumentKind } from "@/generated/prisma/enums";
 import { resolveFileName } from "@/lib/file-name";
 import { holdPdf, pdfDownload } from "@/lib/pdf/downloads";
@@ -50,8 +52,10 @@ async function renderRequested(request: NextRequest): Promise<{ pdf: Uint8Array;
 
   if (doc === "base") {
     // "Fit to one page" (public issue 69): squeezed a step at a time until it fits, as the preview does.
-    let pdf = await renderPdf(printBasePath());
-    for (let fit = 1; settings.fitBaseResume && fit <= FIT_LEVELS && countPdfPages(pdf) > 1; fit++) pdf = await renderPdf(printBasePath(fit));
+    const variant = params.get("variant") || undefined;
+    if (variant && !APPLICATION_ID.test(variant)) return notFound("That resume variant does not exist.");
+    let pdf = await renderPdf(printBasePath(0, variant));
+    for (let fit = 1; settings.fitBaseResume && fit <= FIT_LEVELS && countPdfPages(pdf) > 1; fit++) pdf = await renderPdf(printBasePath(fit, variant));
     return { pdf, fileName: resolveFileName(settings.fileNamePattern, { name, doc: DocumentKind.RESUME, date }) };
   }
 
@@ -68,8 +72,18 @@ async function renderRequested(request: NextRequest): Promise<{ pdf: Uint8Array;
     return notFound(doc === "resume" ? "This application has no tailored resume." : "This application has no cover letter.");
   }
 
-  return {
-    pdf: await renderPdf(`/print/${doc}/${id}`),
-    fileName: resolveFileName(settings.fileNamePattern, { name, company: application.company, role: application.role, doc: TAILORED[doc], date }),
-  };
+  try {
+    const reserved = await reserveApplicationPackage(id);
+    try {
+      const pdf = await renderPdf(packagePrintPath(reserved.id, doc));
+      await recordPackageOutcome(reserved.id, "EXPORTED");
+      return { pdf, fileName: resolveFileName(reserved.snapshot.fileNamePattern, { name: reserved.snapshot.profile.basics.name, company: reserved.snapshot.company, role: reserved.snapshot.role, doc: TAILORED[doc], date }) };
+    } catch (error) {
+      await recordPackageOutcome(reserved.id, "FAILED");
+      throw error;
+    }
+  } catch (error) {
+    if (error instanceof ActionError) return NextResponse.json({ error: error.message }, { status: 409 });
+    throw error;
+  }
 }

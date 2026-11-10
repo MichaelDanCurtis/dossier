@@ -7,6 +7,7 @@ import type { Extracted } from "@/lib/application-data";
 import { readPostingJob } from "@/lib/jobs/read-posting";
 import { defineJob } from "@/lib/jobs/runner";
 import { writeDocumentsJob } from "@/lib/jobs/write-documents";
+import { loadResumeContext } from "@/lib/resume-variant-data";
 import { loadSettings } from "@/lib/settings-data";
 
 // A draft application asked for from Claude chat (#221, draft_application),
@@ -42,7 +43,7 @@ export const connectorDraftJob = defineJob({
     const reading = await readPostingJob.run({ posting }, context);
     const settings = await loadSettings();
     const documents = await writeDocumentsJob.run(
-      { readJobId: context.id, posting, extracted: reading.extracted, match: reading.match, tone: settings.defaultTone, note, write: "both" },
+      { resumeContext: await loadResumeContext(), readJobId: context.id, posting, extracted: reading.extracted, match: reading.match, tone: settings.defaultTone, note, write: "both" },
       context,
     );
     const applicationId = await createApplicationFromDocuments({

@@ -1,4 +1,5 @@
 "use server";
+import { clearWorkspace } from "@/lib/workspace-export";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -301,6 +302,7 @@ export const deleteEverything = action(z.object({ confirm: z.literal("DELETE") }
 
   await prisma.$transaction(async (tx) => {
     await lockAgentSearches(tx);
+    await clearWorkspace(tx);
     await tx.job.deleteMany();
     // The tokens each AI request used (#290).
     await tx.aiUsage.deleteMany();

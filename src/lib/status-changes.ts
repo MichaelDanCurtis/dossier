@@ -3,7 +3,9 @@ import "server-only";
 import type { PrismaClient, StatusEvent } from "@/generated/prisma/client";
 import type { ApplicationStatus } from "@/generated/prisma/enums";
 
-import { frozenDataForSend, unfrozenData } from "./frozen-copy";
+import { unfrozenData } from "./frozen-copy";
+import { PACKAGE_LOCK, applicationPackageSchema, reserveApplicationPackage, recordPackageOutcome, frozenPackageData } from "./application-package";
+import { lockForTransaction } from "./db-lock";
 import { advance, undoChange } from "./status";
 
 // Database side of the status model: every status change is written here, in
@@ -20,8 +22,10 @@ export async function applyStatusChange(
   applicationId: string,
   to: ApplicationStatus,
   now = new Date(),
+  sentPackageId?: string,
 ): Promise<StatusChangeResult> {
   return db.$transaction(async (tx) => {
+    await lockForTransaction(tx, PACKAGE_LOCK);
     // Lock the row so two changes to the same application can't interleave:
     // a write that changes nothing locks it in PostgreSQL and SQLite alike.
     await tx.$executeRaw`UPDATE "Application" SET id = id WHERE id = ${applicationId}`;
@@ -36,8 +40,15 @@ export async function applyStatusChange(
 
     // Its first send: from here on it keeps what it was sent with (#299).
     const firstSend = application.sentAt === null && change.update.sentAt !== null;
+    let packageData = {};
+    if (firstSend) {
+      const reserved = sentPackageId ? await tx.applicationPackageSnapshot.findFirstOrThrow({ where: { id: sentPackageId, applicationId, events: { some: { kind: "SENT" } } } }) : null;
+      const prepared = reserved ? { id: reserved.id, snapshot: applicationPackageSchema.parse(JSON.parse(reserved.snapshotJson)) } : await reserveApplicationPackage(applicationId, tx);
+      packageData = frozenPackageData(prepared.snapshot);
+      if (!reserved) await recordPackageOutcome(prepared.id, "SENT", tx);
+    }
     // Without a place, it goes on top of its new column (public issue 60).
-    await tx.application.update({ where: { id: applicationId }, data: { ...change.update, boardSort: null, ...(firstSend ? await frozenDataForSend(tx, applicationId) : {}) } });
+    await tx.application.update({ where: { id: applicationId }, data: { ...change.update, boardSort: null, ...packageData } });
     const event = await tx.statusEvent.create({ data: { applicationId, ...change.event, previousBoardSort: application.boardSort } });
     return { outcome: "changed", event };
   });

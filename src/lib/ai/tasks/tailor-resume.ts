@@ -23,7 +23,7 @@ import {
   type Task,
 } from "./prompt-parts";
 
-export const TAILOR_RESUME_VERSION = "tailor-resume@9";
+export const TAILOR_RESUME_VERSION = "tailor-resume@10";
 
 const answerSchema = z.object({
   summary: z.string(),
@@ -75,6 +75,7 @@ export const tailorResume: Task<TailorInput, Unit[]> = async (provider, { profil
           `The candidate's profile:\n${profileForPrompt(profile)}`,
           `The job:\n${jobForPrompt(extracted, match)}`,
           applicationFacts(facts),
+          options.resumeFocus ? `Preferred emphasis (not factual evidence; do not add claims): ${options.resumeFocus}` : "",
         ]
           .filter(Boolean)
           .join("\n\n"),

@@ -11,14 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { JOB_SOURCES, type JobSource, type JSearchHost } from "@/lib/job-search/search";
+import { JOB_SOURCES, type SearchProvider, type JSearchHost } from "@/lib/job-search/search";
 import { FREEHIRE_URL, JSEARCH_KEY_URLS, SOURCE_INFO, type JobSearchSettingsView } from "@/lib/job-search/sources";
 import { cn } from "@/lib/cn";
 
 import { saveJobSearchDetails, saveJobSource, saveJobSourceKey, testJobSource } from "./actions";
 import { SettingsSectionIntro } from "./settings-screen";
 
-type Choice = JobSource | "OFF";
+type Choice = SearchProvider | "OFF";
 
 const CHOICES: readonly { value: Choice; name: string; description: string; tag: string }[] = [
   ...JOB_SOURCES.map((source) => ({ value: source, ...SOURCE_INFO[source] })),
@@ -216,7 +216,7 @@ function HostChoice({ host, onChange }: { host: JSearchHost; onChange: (host: JS
   );
 }
 
-function ConnectionStatus({ connection, source }: { connection: Connection; source: JobSource }) {
+function ConnectionStatus({ connection, source }: { connection: Connection; source: SearchProvider }) {
   const [dot, text, message] =
     connection.status === "connected"
       ? ["bg-success", "text-success", `Connected · ${SOURCE_INFO[source].name} answered in ${connection.seconds.toLocaleString("en-US")} s`]

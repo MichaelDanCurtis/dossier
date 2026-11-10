@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Switch } from "radix-ui";
-import { useEffect, useId, useOptimistic, useRef, useState, useTransition } from "react";
+import { useEffect, useId, useOptimistic, useRef, useState, useTransition, type ReactNode } from "react";
 
 import { plainUnit, type UnitRenderer } from "@/components/documents/document-page";
 import { DocumentPreview } from "@/components/documents/document-preview";
@@ -108,6 +108,7 @@ const NO_AI = "That needs an AI provider. Choose one in Settings → AI provider
 const NOTHING_SAVING: Readonly<Record<string, string>> = {};
 
 export type ApplicationViewProps = {
+  history?: ReactNode;
   application: {
     id: string;
     title: string;
@@ -193,6 +194,7 @@ export type ApplicationViewProps = {
  * below the document on narrow windows. The tab is kept in the URL.
  */
 export function ApplicationView({
+  history,
   application,
   timeZone,
   meta,
@@ -720,6 +722,7 @@ export function ApplicationView({
           <TabsTrigger value="notes">{notes > 0 ? `Notes · ${notes}` : "Notes"}</TabsTrigger>
         </TabsList>
       </ApplicationHeader>
+      {history}
 
       <div className="@container flex min-h-0 flex-1 flex-wrap @min-[780px]/page:flex-nowrap">
         <TabsContent value="resume" className="flex min-h-0 min-w-0 flex-[999_1_480px]">

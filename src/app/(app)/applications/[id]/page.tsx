@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 
+import { reviewApplicationPackage } from "@/lib/application-package";
+import { resumeContextSchema } from "@/lib/resume-variants";
 import { activityTimeline } from "@/lib/activity";
 import { isAiConfigured } from "@/lib/ai/config";
 import { editsSchema, matchSchema, matchScore } from "@/lib/application-data";
@@ -25,6 +27,7 @@ import { sectionName } from "@/lib/resume-sections";
 import { loadThemes } from "@/lib/theme-data";
 import { userTimeZone } from "@/lib/time-zone";
 
+import { PackageHistory } from "./package-history";
 import { ApplicationView } from "./application-view";
 import { metaLine } from "./meta";
 import { tabFrom } from "./tabs";
@@ -87,8 +90,11 @@ export default async function ApplicationPage({ params, searchParams }: PageProp
   const fileName = (doc: "RESUME" | "COVER_LETTER") =>
     resolveFileName(settings.fileNamePattern, { name: profile.basics.name, company: application.company, role: application.role, doc, date: new Date() });
 
+  const packageReview = await reviewApplicationPackage(id);
+  const origin = application.variantContextJson ? resumeContextSchema.safeParse(JSON.parse(application.variantContextJson)) : null;
   return (
     <ApplicationView
+      history={<PackageHistory applicationId={id} review={packageReview} variantName={origin?.success ? origin.data.variantName : null} />}
       application={{
         id,
         title,

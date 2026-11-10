@@ -35,7 +35,7 @@ export type PostingResultsProps = {
       onSearchAgain: () => void;
       searching: boolean;
     }
-  | { mode: "saved" | "dismissed"; postings: ShownPosting[] }
+  | { mode: "saved" | "dismissed" | "collection"; postings: ShownPosting[] }
 );
 
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
@@ -164,6 +164,7 @@ export function PostingResults(props: PostingResultsProps) {
       ? "Nothing saved yet. Save a posting from your search results to keep it here."
       : mode === "dismissed"
         ? "Nothing dismissed. Postings you dismiss stay out of your searches and wait here."
+        : mode === "collection" && postings.length === 0 ? "No cached roles match these filters yet. Add or check a board, or try fewer keywords."
         : postings.length > 0 || !searched
           ? "You've dismissed every posting here."
           : radius
@@ -182,7 +183,7 @@ export function PostingResults(props: PostingResultsProps) {
               ? `${plural(postings.length, "posting", "postings")} from ${SOURCE_INFO[props.search.source].name}${next ? ", more to come" : ""} · searched ${props.search.ranAt}`
               : mode === "saved"
                 ? plural(visible.length, "saved posting", "saved postings")
-                : `${plural(visible.length, "dismissed posting", "dismissed postings")}, kept out of your searches`}
+                : mode === "collection" ? plural(visible.length, "cached role", "cached roles") : `${plural(visible.length, "dismissed posting", "dismissed postings")}, kept out of your searches`}
           </span>
           {props.mode === "search" && (
             <button
@@ -239,7 +240,7 @@ export function PostingResults(props: PostingResultsProps) {
           scoring={scoring[postingKey(selected)] ?? null}
           onScore={() => void score(selected)}
         >
-          {!selected.state.dismissed && (
+          {!selected.state.dismissed && (selected.source !== "DIRECT" || selected.complete) && (
             <StartButton starting={starting === postingKey(selected)} onClick={() => void start(withoutState(selected), postingKey(selected))} />
           )}
         </PostingDetail>
@@ -472,6 +473,7 @@ function PostingDetail({
 
       <div className="flex flex-wrap items-center gap-2">
         {children}
+        {posting.source === "DIRECT" && !posting.complete && <p className="text-xs text-muted">Description queued. Open the employer’s page, or wait for enrichment before scoring or drafting.</p>}
         {state.dismissed ? (
           <Button variant="secondary" size="sm" onClick={onRestore}>
             Bring back
@@ -494,7 +496,7 @@ function PostingDetail({
             <span className="sr-only"> (opens in a new tab)</span>
           </a>
         )}
-        <Button variant="secondary" size="sm" aria-disabled={scoring ? true : undefined} onClick={scoring ? undefined : onScore}>
+        <Button variant="secondary" size="sm" disabled={posting.source === "DIRECT" && !posting.complete} aria-disabled={scoring ? true : undefined} onClick={scoring ? undefined : onScore}>
           {scoring ? "Scoring…" : state.score ? "Score again" : "Score"}
         </Button>
         {!state.dismissed && (

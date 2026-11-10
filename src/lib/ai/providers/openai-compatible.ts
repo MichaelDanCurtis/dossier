@@ -8,6 +8,7 @@ import type { UsageSink } from "@/lib/usage";
 
 import { AiError } from "../errors";
 import { BaseProvider, SCHEMA_REFUSED, withJsonSchema, type ChatAnswer, type ChatCall } from "../provider";
+import { budgetedAiFetch } from "../request-budget";
 import { keyGuardedFetch } from "./guarded-fetch";
 import { apiAddress, ignoresSchemas, serverAt, type Server } from "./servers";
 
@@ -100,7 +101,7 @@ export class OpenAICompatibleProvider extends BaseProvider {
       maxRetries: 1,
       defaultHeaders: { ...(apiKey ? {} : { Authorization: null }), ...this.server?.headers?.() },
       // With a key attached, no redirects to other hosts (E11-5).
-      ...(apiKey ? { fetch: keyGuardedFetch() } : {}),
+      fetch: apiKey ? keyGuardedFetch() : budgetedAiFetch,
     });
   }
 

@@ -7,7 +7,7 @@ import { loadSettings } from "@/lib/settings-data";
 
 import type { RequestContext, SourceCredentials } from "./adapter";
 import { JobSearchError, jobSearchError } from "./errors";
-import type { JobSource, JSearchHost } from "./search";
+import type { SearchProvider, JSearchHost } from "./search";
 import { ARBEITSAGENTUR_NOTE, FREEHIRE_URL, SOURCE_INFO, type JobKeyState, type JobSearchSettingsView } from "./sources";
 
 // Which job source to search, and with which key (E14-4): what's saved in
@@ -16,7 +16,7 @@ import { ARBEITSAGENTUR_NOTE, FREEHIRE_URL, SOURCE_INFO, type JobKeyState, type 
 
 export type JobSearchConfig = {
   /** The source in effect; null while job search is off. */
-  source: JobSource | null;
+  source: SearchProvider | null;
   /** Whether the choice is saved in Settings, rather than coming from DOSSIER_JOBS_SOURCE. */
   saved: boolean;
   jsearch: { key: string | null; host: JSearchHost; keyState: JobKeyState };
@@ -42,7 +42,7 @@ type JobEnv = Pick<
   | "DOSSIER_JOBS_ARBEITSAGENTUR"
 >;
 
-const FROM_ENV: Record<NonNullable<Env["DOSSIER_JOBS_SOURCE"]>, JobSource | null> = {
+const FROM_ENV: Record<NonNullable<Env["DOSSIER_JOBS_SOURCE"]>, SearchProvider | null> = {
   jsearch: "JSEARCH",
   adzuna: "ADZUNA",
   arbeitsagentur: "ARBEITSAGENTUR",
@@ -117,7 +117,7 @@ export function jobSearchView(config: JobSearchConfig): JobSearchSettingsView {
  * or FreeHire is pointed at a self-hosted origin (DOSSIER_FREEHIRE_URL).
  */
 export function requestContext(
-  source: JobSource,
+  source: SearchProvider,
   base = env.DOSSIER_JOBS_TEST_BASE_URL,
   freehireUrl = env.DOSSIER_FREEHIRE_URL,
 ): RequestContext {
@@ -131,7 +131,7 @@ export function requestContext(
  * request to a source asks here first, so the BA's switch and note (#223)
  * hold for Find jobs, saved postings, the job agent and the Claude connector.
  */
-export function credentialsFor<S extends JobSource>(config: JobSearchConfig, source: S): SourceCredentials[S] {
+export function credentialsFor<S extends SearchProvider>(config: JobSearchConfig, source: S): SourceCredentials[S] {
   const missing = (keyState: JobKeyState) =>
     keyState === "unreadable"
       ? new JobSearchError("no-key", `Your saved ${SOURCE_INFO[source].name} key can't be read. Enter it again in Settings → Job search.`)

@@ -1,11 +1,11 @@
-import type { JobSource, JSearchHost } from "./search";
+import type { JobSource, SearchProvider, JSearchHost } from "./search";
 
 /** What Settings → Job search may know about a source's key: never the key itself. "env" means it comes from the environment. */
 export type JobKeyState = "none" | "set" | "unreadable" | "env";
 
 /** What the Job search section starts from (E14-4). */
 export type JobSearchSettingsView = {
-  source: JobSource | "OFF";
+  source: SearchProvider | "OFF";
   jsearch: { host: JSearchHost; keyState: JobKeyState };
   adzuna: { appId: string; keyState: JobKeyState };
   /** Whether this server offers the Bundesagentur für Arbeit, and when its note was accepted (#223). */
@@ -46,6 +46,8 @@ export type SourceInfo = {
 };
 
 export const SOURCE_INFO: Record<JobSource, SourceInfo> = {
+  DIRECT: { name: "Company boards", description: "Employer-published roles from your chosen company watchlist.", tag: "Your watchlist · observed availability · no distance filter", keyUrl: null, quotaPeriod: null, attribution: "Employer-published posting", attributionLink: null, countries: null, radius: false },
+  LINKEDIN: { name: "LinkedIn import", description: "Posting text you supplied, with a link back to LinkedIn.", tag: "Assisted workflow · manual submission", keyUrl: null, quotaPeriod: null, attribution: "LinkedIn · user-supplied posting", attributionLink: null, countries: null, radius: false },
   JSEARCH: {
     name: "JSearch",
     description: "Postings from LinkedIn, Indeed, Glassdoor and company sites, through Google for Jobs.",

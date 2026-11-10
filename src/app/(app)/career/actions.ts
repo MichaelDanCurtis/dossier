@@ -1,0 +1,59 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+
+import { action } from "@/lib/action";
+import { saveAgentSearch } from "@/lib/agent/searches";
+import { addCareerAnswer, applyCareerProposal, changeCareerState, createCareerSession, currentCareerPreferences, retryCareerAnswer } from "@/lib/career/data";
+import { careerKindSchema } from "@/lib/career/schema";
+import "@/lib/career/jobs";
+import { queueCommittedJob, retryJob } from "@/lib/jobs/runner";
+
+export const startCareerSession = action(z.object({ kind: careerKindSchema, title: z.string().trim().max(200) }), async ({ kind, title }) => {
+  return { id: await createCareerSession(kind, title) };
+});
+
+export const answerCareerQuestion = action(z.object({ sessionId: z.string().min(1), revision: z.number().int().nonnegative(), requestId: z.uuid(), text: z.string().max(8000), finishing: z.boolean(), skip: z.boolean() }), async (input) => {
+  const result = await addCareerAnswer(input);
+  queueCommittedJob(result.jobId);
+  revalidatePath("/career");
+  return result;
+});
+
+export const retryCareerResponse = action(z.object({ sessionId: z.string() }), async ({ sessionId }) => {
+  const result = await retryCareerAnswer(sessionId);
+  if (result.retry) await retryJob(result.jobId);
+  else queueCommittedJob(result.jobId);
+  return result;
+});
+
+export const reviewCareerProposal = action(z.object({ id: z.string(), revision: z.number().int().nonnegative(), accept: z.boolean() }), async ({ id, revision, accept }) => {
+  const result = await applyCareerProposal(id, revision, accept);
+  revalidatePath("/career");
+  revalidatePath("/profile");
+  revalidatePath("/resume");
+  return result;
+});
+
+export const setCareerSessionState = action(z.object({ id: z.string(), revision: z.number().int().nonnegative(), state: z.enum(["ACTIVE", "PAUSED", "FINISHED"]) }), async ({ id, revision, state }) => {
+  await changeCareerState(id, revision, state);
+  revalidatePath("/career");
+  return { state };
+});
+
+export const saveCareerSearch = action(z.object({ index: z.number().int().min(0).max(2) }), async ({ index }) => {
+  const preferences = await currentCareerPreferences();
+  const suggestion = preferences?.searches[index];
+  if (!suggestion) return { saved: false };
+  await saveAgentSearch({ query: suggestion.query, name: suggestion.query.keywords.slice(0, 80) || "Career preferences", enabled: true });
+  revalidatePath("/settings");
+  return { saved: true };
+});
+
+export const saveCareerCheckIns = action(z.object({ cadence: z.enum(["off", "weekly", "monthly"]), paused: z.boolean() }), async ({ cadence, paused }) => {
+  const { saveSettings } = await import("@/lib/settings-data");
+  await saveSettings({ careerReviewCadence: cadence, careerReviewPaused: paused });
+  revalidatePath("/career");
+  return { saved: true };
+});

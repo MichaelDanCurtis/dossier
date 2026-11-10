@@ -3,7 +3,7 @@ import "server-only";
 import { credentialsFor, loadJobSearchConfig, requestContext } from "./config";
 import { JobSearchError } from "./errors";
 import { postingDetails, searchPostings } from "./index";
-import type { FoundPosting, JobSource, SearchPage, SearchProblem, SearchQuery } from "./search";
+import { isSearchProvider, type FoundPosting, type JobSource, type SearchPage, type SearchProblem, type SearchQuery } from "./search";
 
 // Asking a job source from Find jobs (E14-6): a page of postings, or what
 // went wrong in words for the screen. Kept searches are in
@@ -20,6 +20,7 @@ export async function askSource(
   const config = await loadJobSearchConfig();
   const from = source ?? config.source;
   if (!from) return { ok: false, problem: "off", message: "Choose where to search in Settings → Job search first." };
+  if (!isSearchProvider(from)) return { ok: false, problem: "off", message: "Use Company boards or LinkedIn import for this source." };
   if (!query.country) return { ok: false, problem: "no-country", message: "Choose a country to search in." };
   try {
     const page = await searchPostings(from, credentialsFor(config, from), query, next, requestContext(from));
@@ -36,6 +37,7 @@ export async function askSource(
  */
 export async function fullText(posting: FoundPosting): Promise<string | null> {
   if (posting.complete) return posting.description;
+  if (!isSearchProvider(posting.source)) return null;
   try {
     return await postingDetails(posting.source, credentialsFor(await loadJobSearchConfig(), posting.source), posting, requestContext(posting.source));
   } catch (error) {

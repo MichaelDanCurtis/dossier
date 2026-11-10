@@ -1,3 +1,4 @@
+import { backfillSentApplicationPackages } from "@/lib/application-package";
 import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
@@ -38,6 +39,7 @@ export const POST = route(async (request) => {
   await importExport(prisma, parsed.data);
   // A file from before 1.12 has no copies of what its sent applications were sent with (#299).
   await freezeSentApplications();
+  await backfillSentApplicationPackages();
   revalidatePath("/", "layout");
   return NextResponse.json({ incoming, backup });
 });

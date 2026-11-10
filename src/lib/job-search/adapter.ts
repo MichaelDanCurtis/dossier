@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { FoundPosting, JobSource, JSearchHost, SearchPage, SearchQuery } from "./search";
+import type { FoundPosting, SearchProvider, JSearchHost, SearchPage, SearchQuery } from "./search";
 
 // What every job source implements (E14-1). Adapters turn a source's own
 // request and answer into the shared query and posting shapes, and every
@@ -22,7 +22,7 @@ export type RequestContext = {
   signal?: AbortSignal;
 };
 
-export type JobSourceAdapter<S extends JobSource> = {
+export type JobSourceAdapter<S extends SearchProvider> = {
   source: S;
   /** One page of results (the countries it covers are checked before, see SOURCE_INFO); `next` comes from the page before, null for the first. */
   search: (query: SearchQuery, credentials: SourceCredentials[S], next: string | null, context?: RequestContext) => Promise<SearchPage>;

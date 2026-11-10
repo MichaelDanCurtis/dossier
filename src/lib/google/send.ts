@@ -1,5 +1,6 @@
 import "server-only";
 
+import { reserveApplicationPackage, packagePrintPath, recordPackageOutcome } from "@/lib/application-package";
 import { ApplicationStatus, DocumentKind, EmailDirection } from "@/generated/prisma/enums";
 import { unitsSchema } from "@/lib/application-data";
 import { emailAddresses, emailParts } from "@/lib/application-email";
@@ -7,7 +8,6 @@ import { resolveFileName } from "@/lib/file-name";
 import { renderPdf } from "@/lib/pdf/render";
 import { prisma } from "@/lib/prisma";
 import { loadProfileName } from "@/lib/profile-data";
-import { loadSettings } from "@/lib/settings-data";
 import { applyStatusChange } from "@/lib/status-changes";
 
 import { loadGoogleAccount } from "./account";
@@ -25,8 +25,8 @@ const PRINTED = [
 ] as const;
 
 /** "Jane Doe <jane@gmail.com>", from the profile's name and the account. */
-async function sender(address: string): Promise<string> {
-  const name = (await loadProfileName()).trim().replace(/[<>"]/g, "");
+async function sender(address: string, savedName?: string): Promise<string> {
+  const name = (savedName ?? await loadProfileName()).trim().replace(/[<>"]/g, "");
   return name ? `${name} <${address}>` : address;
 }
 
@@ -45,23 +45,27 @@ export async function sendApplicationEmail(applicationId: string): Promise<SentA
 
   const units = unitsSchema.safeParse(application.documents.find((document) => document.kind === DocumentKind.EMAIL)?.units);
   if (!units.success) throw new GoogleError("unavailable", "Write the email first.");
-  const { to, subject, body } = emailParts(units.data);
+  const prepared = await reserveApplicationPackage(applicationId);
+  const { snapshot } = prepared;
+  const { to, subject, body } = emailParts(snapshot.email ?? units.data);
   if (emailAddresses(to).length === 0) throw new GoogleError("unavailable", "Add who it's to first: the posting doesn't give an address.");
   if (!subject.trim() || !body.trim()) throw new GoogleError("unavailable", "The email needs a subject and a message.");
 
-  const [name, settings] = await Promise.all([loadProfileName(), loadSettings()]);
+  const name = snapshot.profile.basics.name;
+  const settings = { fileNamePattern: snapshot.fileNamePattern };
   const attachments: Attachment[] = [];
   for (const { kind, path } of PRINTED) {
-    if (!application.documents.some((document) => document.kind === kind)) continue;
+    if (!(kind === DocumentKind.RESUME ? snapshot.resume : snapshot.letter)) continue;
     attachments.push({
-      fileName: resolveFileName(settings.fileNamePattern, { name, company: application.company, role: application.role, doc: kind, date: new Date() }),
+      fileName: resolveFileName(settings.fileNamePattern, { name, company: snapshot.company, role: snapshot.role, doc: kind, date: new Date() }),
       contentType: "application/pdf",
-      data: await renderPdf(`/print/${path}/${applicationId}`),
+      data: await renderPdf(packagePrintPath(prepared.id, path)),
     });
   }
 
-  const from = await sender(account.email);
+  const from = await sender(account.email, name);
   const sent = await sendMail({ from, to, subject, body, attachments });
+  await recordPackageOutcome(prepared.id, "SENT");
   await prisma.$transaction([
     prisma.application.update({ where: { id: applicationId }, data: { emailThreadId: sent.threadId } }),
     prisma.emailMessage.upsert({
@@ -85,7 +89,7 @@ export async function sendApplicationEmail(applicationId: string): Promise<SentA
 
   let eventId: string | null = null;
   if (application.status === ApplicationStatus.DRAFT) {
-    const change = await applyStatusChange(prisma, applicationId, ApplicationStatus.SENT);
+    const change = await applyStatusChange(prisma, applicationId, ApplicationStatus.SENT, new Date(), prepared.id);
     if (change.outcome === "changed") eventId = change.event.id;
   }
   return { threadId: sent.threadId, eventId, attachments: attachments.map((file) => file.fileName) };

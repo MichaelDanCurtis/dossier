@@ -10,7 +10,7 @@ import { adzuna } from "./adzuna";
 import { arbeitsagentur } from "./arbeitsagentur";
 import { freehire } from "./freehire";
 import { jsearch } from "./jsearch";
-import { postingKey, type FoundPosting, type JobSource, type SearchPage, type SearchQuery } from "./search";
+import { postingKey, type FoundPosting, type SearchProvider, type SearchPage, type SearchQuery } from "./search";
 import { sourceCovers } from "./sources";
 
 // Searching the chosen job source from the server (E14-1). Results are
@@ -21,14 +21,14 @@ import { sourceCovers } from "./sources";
 export type { JSearchHost, RequestContext, SourceCredentials } from "./adapter";
 export { JobSearchError } from "./errors";
 
-const ADAPTERS: { [S in JobSource]: JobSourceAdapter<S> } = {
+const ADAPTERS: { [S in SearchProvider]: JobSourceAdapter<S> } = {
   JSEARCH: jsearch,
   ADZUNA: adzuna,
   ARBEITSAGENTUR: arbeitsagentur,
   FREEHIRE: freehire,
 };
 
-const adapterFor = <S extends JobSource>(source: S) => ADAPTERS[source] as JobSourceAdapter<S>;
+const adapterFor = <S extends SearchProvider>(source: S) => ADAPTERS[source] as JobSourceAdapter<S>;
 
 /** Logs failures that say something about the source; a wrong key or a used-up quota is the user's to fix. */
 async function logged<T>(work: () => Promise<T>): Promise<T> {
@@ -43,7 +43,7 @@ async function logged<T>(work: () => Promise<T>): Promise<T> {
 }
 
 /** One page of postings for `query` from `source`, from the cache when it was asked for in the last half hour. */
-export async function searchPostings<S extends JobSource>(
+export async function searchPostings<S extends SearchProvider>(
   source: S,
   credentials: SourceCredentials[S],
   query: SearchQuery,
@@ -63,7 +63,7 @@ export async function searchPostings<S extends JobSource>(
 }
 
 /** The whole text of a posting: its own description when that's complete, else fetched; null when it can't be had. */
-export async function postingDetails<S extends JobSource>(
+export async function postingDetails<S extends SearchProvider>(
   source: S,
   credentials: SourceCredentials[S],
   posting: FoundPosting,
@@ -79,6 +79,6 @@ export async function postingDetails<S extends JobSource>(
 }
 
 /** "Test connection" in Settings → Job search: throws a JobSearchError when the source or the key doesn't work. */
-export async function testSource<S extends JobSource>(source: S, credentials: SourceCredentials[S], context: RequestContext = {}): Promise<void> {
+export async function testSource<S extends SearchProvider>(source: S, credentials: SourceCredentials[S], context: RequestContext = {}): Promise<void> {
   await logged(() => adapterFor(source).test(credentials, context));
 }

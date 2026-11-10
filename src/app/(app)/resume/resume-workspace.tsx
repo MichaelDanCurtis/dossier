@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { DocumentPreview } from "@/components/documents/document-preview";
 import { DownloadPdfButton } from "@/components/documents/download-pdf-button";
@@ -13,6 +13,10 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toggle } from "@/components/ui/toggle";
 import type { PaperSize } from "@/generated/prisma/enums";
+import { documentLabels } from "@/lib/document-labels";
+import { BASE_VARIANT, resolveResumeVariant, type ResumeVariantView } from "@/lib/resume-variants";
+import type { CareerSessionView } from "@/lib/career/schema";
+import type { JobView } from "@/lib/jobs/runner";
 import type { ProfileData } from "@/lib/profile";
 import { saveFile } from "@/lib/save-file";
 import type { SectionLayout } from "@/lib/resume-sections";
@@ -20,6 +24,8 @@ import { parseThemeFile, themeFile, themeFileName } from "@/lib/theme-file";
 import { FIT_LEVELS, hasSidebar, PAPER_SIZES, type ThemeData } from "@/lib/themes";
 
 import { deleteTheme, duplicateTheme, importTheme, saveResumeSections, saveTheme, setBaseTheme, setFitBaseResume } from "./actions";
+import { ContentPanel } from "./content-panel";
+import { CoachPanel } from "./coach-panel";
 import { SectionsPanel } from "./sections-panel";
 import { draftFrom, ThemeBuilder, type ThemeDraft } from "./theme-builder";
 import { ThemePicker } from "./theme-picker";
@@ -40,9 +46,14 @@ export type ResumeWorkspaceProps = {
   fitToPage: boolean;
   /** `/resume?panel=sections` opens the Sections tab. */
   initialPanel?: Panel;
+  variant?: ResumeVariantView;
+  variants?: ResumeVariantView[];
+  versions?: { id: string; revision: number; cause: string; createdAt: string }[];
+  coachSession?: CareerSessionView | null;
+  coachJob?: JobView | null;
 };
 
-export type Panel = "themes" | "customize" | "sections";
+export type Panel = "themes" | "customize" | "sections" | "content" | "coach";
 
 /**
  * The Base resume screen: the preview on the left and the theme panel on the
@@ -61,7 +72,26 @@ export function ResumeWorkspace({
   sections: initialSections,
   fitToPage: initialFit,
   initialPanel = "themes",
+  variant: initialVariant = { id: BASE_VARIANT, name: "Base resume", focus: "", revision: 0, selection: [], overrides: [] },
+  variants, versions = [], coachSession = null, coachJob = null,
 }: ResumeWorkspaceProps) {
+  const [variant, setVariant] = useState(initialVariant);
+  const [savedVariant, setSavedVariant] = useState(initialVariant);
+  const variantDirty = JSON.stringify(variant) !== JSON.stringify(savedVariant);
+  // A reviewed coach edit refreshes data without throwing away the active panel
+  // or an unsaved content draft. Ignore older props while a save is in flight.
+  if (initialVariant.revision > savedVariant.revision && !variantDirty) {
+    setVariant(initialVariant);
+    setSavedVariant(initialVariant);
+  }
+  const saveVariant = (value: ResumeVariantView) => { setVariant(value); setSavedVariant(value); };
+  useEffect(() => {
+    if (!variantDirty) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [variantDirty]);
+  const resolved = useMemo(() => resolveResumeVariant(profile, variant, documentLabels(language)), [profile, variant, language]);
   const [themes, setThemes] = useState(initialThemes);
   const [fitToPage, setFitToPage] = useState(initialFit);
   // How far the resume is squeezed to fit one page (public issue 69): the
@@ -85,7 +115,7 @@ export function ResumeWorkspace({
   const base = themes.find((entry) => entry.id === baseId) ?? themes[0];
   const theme: ThemeData = draft ? { ...draft, id: draft.id ?? "draft", builtIn: false } : base;
   // The squeeze starts over from the theme as it is whenever what's on the page changes.
-  const shown = [draft, base, profile, paper, includeReferences, language, sections, fitToPage] as const;
+  const shown = [draft, base, profile, variant, paper, includeReferences, language, sections, fitToPage] as const;
   const [squeezed, setSqueezed] = useState(shown);
   if (shown.some((input, index) => input !== squeezed[index])) {
     setSqueezed(shown);
@@ -207,13 +237,13 @@ export function ResumeWorkspace({
     <>
       <PageHeader
         title="Base resume"
-        description="Built straight from your profile. Every new application starts from this one, then gets tailored to the job."
+        description={`Using ${variant.name}. Review the wording and selected history here; new applications use this saved resume, then tailor it to the job.`}
         actions={
           <>
             <Link href="/profile" className={buttonClassName("secondary")}>
               Edit profile
             </Link>
-            <DownloadPdfButton href="/api/pdf?doc=base">Download PDF</DownloadPdfButton>
+            <DownloadPdfButton href={`/api/pdf?doc=base&variant=${encodeURIComponent(variant.id)}`}>Download PDF</DownloadPdfButton>
           </>
         }
       />
@@ -234,11 +264,11 @@ export function ResumeWorkspace({
             ) : null
           }
         >
-          <ResumeDocument theme={theme} profile={profile} paper={paper} includeReferences={includeReferences} language={language} sections={sections} fit={fitToPage ? fit : 0} />
+          <ResumeDocument theme={theme} profile={resolved.profile} units={resolved.units} paper={paper} includeReferences={includeReferences} language={language} sections={sections} fit={fitToPage ? fit : 0} />
         </DocumentPreview>
         <aside
           ref={panelArea}
-          aria-label="Theme and sections"
+          aria-label="Resume content, coaching and appearance"
           className="flex flex-[1_0_300px] flex-col gap-6 border-t border-line bg-paper px-7 pt-7 pb-12 @min-[780px]:border-t-0 @min-[780px]:border-l"
         >
           <Toggle
@@ -256,11 +286,15 @@ export function ResumeWorkspace({
             onCheckedChange={(next) => void toggleFit(next)}
           />
           <Tabs value={panel} onValueChange={(value) => openPanel(value as Panel)} className="flex flex-col gap-6">
-            <TabsList variant="segmented">
+            <TabsList variant="segmented" className="flex-wrap">
+              <TabsTrigger value="content">Content</TabsTrigger>
+              <TabsTrigger value="coach" disabled={variantDirty} title={variantDirty ? "Save or cancel resume edits before coaching" : undefined}>Coach</TabsTrigger>
               <TabsTrigger value="themes">Themes</TabsTrigger>
               <TabsTrigger value="customize">Customize</TabsTrigger>
               <TabsTrigger value="sections">Sections</TabsTrigger>
             </TabsList>
+            <TabsContent value="content"><ContentPanel key={variant.id} profile={profile} variant={variant} savedVariant={savedVariant} variants={variants ?? [variant]} versions={versions} onChange={setVariant} onSaved={saveVariant} onCoach={() => openPanel("coach")} /></TabsContent>
+            <TabsContent value="coach"><CoachPanel variantId={variant.id} session={coachSession} job={coachJob} /></TabsContent>
             <TabsContent value="themes">
               <ThemePicker
                 themes={themes}
