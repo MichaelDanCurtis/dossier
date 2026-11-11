@@ -47,6 +47,14 @@ class DomainRoutingTests(unittest.TestCase):
     def setUp(self):
         self.config = {"origin": "https://career.example.com", "proxyNetwork": "proxy", "users": []}
 
+    def test_browser_patch_does_not_change_the_application_image(self):
+        self.config.update(linkedinBridge=True, appImage="app:reviewed", bridgeImage="browser:patched", users=[{"username": "alice", "appSecret": "fixture-secret"}])
+        services = manage.compose_config(self.config)["services"]
+        self.assertEqual(services["app-alice"]["image"], "app:reviewed")
+        self.assertEqual(services["bridge-alice"]["image"], "browser:patched")
+        self.assertNotIn("ports", services["bridge-alice"])
+        self.assertEqual(services["bridge-alice"]["volumes"], ["browser-alice:/data"])
+
     def test_existing_installs_have_no_alias_routes(self):
         labels = manage.compose_config(self.config)["services"]["gateway"]["labels"]
         self.assertFalse(any("legacy" in key for key in labels))
