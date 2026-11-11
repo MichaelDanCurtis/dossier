@@ -178,10 +178,3 @@
   --color-focus: var(--ui-sidebar-ink);
   color: var(--ui-sidebar-ink);
 }
-/* Editorial's settings read like a page; Studio retains the compact section column. */
-:root[data-ui-theme="editorial"] .app-settings-layout { display:block; }
-:root[data-ui-theme="editorial"] .app-settings-nav { flex-direction:row; flex-wrap:wrap; max-width:none; border-bottom:1px solid var(--color-line); padding-bottom:1rem; margin-bottom:1.5rem; }
-@media(max-width:700px) {
-  .app-settings-layout { padding-inline:1rem; }
-  .app-settings-nav { min-width:0; }
-}

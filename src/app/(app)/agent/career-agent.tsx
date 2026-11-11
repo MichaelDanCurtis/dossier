@@ -9,6 +9,7 @@ import { startCareerSession } from "@/app/(app)/career/actions";
 import { PageHeader } from "@/components/page-header";
 import { toastResult } from "@/components/toast";
 import { Button, buttonClassName } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useJob } from "@/hooks/use-job";
 import type { careerWatchView } from "@/lib/studio/data";
 import { currencies } from "@/lib/studio/schema";
@@ -26,7 +27,13 @@ export function CareerAgent({ view }: { view: Awaited<ReturnType<typeof careerWa
   const money = (value: number) => new Intl.NumberFormat(undefined, { style: "currency", currency: view.watch.currency, maximumFractionDigits: 0 }).format(value);
   return <>
     <PageHeader title="Career agent" description="Keep track of your current role, published opportunities and the pay ranges you can actually compare." />
-    <div className="space-y-5 px-5 pb-8 lg:px-10">
+    <Tabs defaultValue={view.watch.role ? "opportunities" : "role"} className="min-w-0 space-y-6 px-5 pb-8 lg:px-10">
+      <TabsList aria-label="Career agent sections">
+        <TabsTrigger value="role">Your role</TabsTrigger>
+        <TabsTrigger value="employer">Employer</TabsTrigger>
+        <TabsTrigger value="opportunities">Pay & roles</TabsTrigger>
+      </TabsList>
+      <TabsContent value="role" forceMount className="data-[state=inactive]:hidden">
       <form className="grid gap-4 rounded-panel border border-line-card bg-card p-5 sm:grid-cols-2 lg:grid-cols-3" onSubmit={(e) => { e.preventDefault(); start(async () => { const result = toastResult(await saveCareerWatch(watch)); if (result.ok) router.refresh(); }); }}>
         <label className="text-sm">Career status<select aria-label="Career status" className={input} value={watch.stage} onChange={(e) => setWatch({ ...watch, stage: e.target.value === "EMPLOYED" ? "EMPLOYED" : "SEARCHING" })}><option value="SEARCHING">Searching</option><option value="EMPLOYED">In a role</option></select></label>
         <label className="text-sm">Current employer<input className={input} value={watch.employer} maxLength={200} onChange={(e) => setWatch({ ...watch, employer: e.target.value })} /></label>
@@ -36,6 +43,8 @@ export function CareerAgent({ view }: { view: Awaited<ReturnType<typeof careerWa
         <label className="text-sm">Target annual base pay<input className={input} type="number" min={0} max={100000000} value={watch.targetBase || ""} onChange={(e) => setWatch({ ...watch, targetBase: Number(e.target.value) })} /></label>
         <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-3"><Button type="submit" disabled={busy}>Save career watch</Button><p className="text-xs text-muted">Pay stays in your private workspace and is not sent to the drafting model.</p></div>
       </form>
+      </TabsContent>
+      <TabsContent value="employer" forceMount className="data-[state=inactive]:hidden">
       <section className="space-y-3 rounded-panel border border-line-card bg-card p-5">
         <h2 className="font-medium">Your employer’s board</h2>
         <p className="text-sm text-muted">Matches use the exact employer name and the role phrase on a company board you follow. A listing does not establish why it was posted.</p>
@@ -46,6 +55,8 @@ export function CareerAgent({ view }: { view: Awaited<ReturnType<typeof careerWa
         {view.boards.length > 0 && !view.employerRoles.length && <p className="text-sm text-muted">No matching role in the cached postings.</p>}
         {view.employerRoles.map((row) => <a key={row.url} href={row.url} className="block text-sm underline" target="_blank" rel="noreferrer">{row.title} · {row.place}</a>)}
       </section>
+      </TabsContent>
+      <TabsContent value="opportunities" forceMount className="data-[state=inactive]:hidden">
       <section className="space-y-3 rounded-panel border border-line-card bg-card p-5">
         <h2 className="font-medium">Comparable published pay</h2>
         <p className="text-sm text-muted">Shows saved jobs and cached company roles with an explicit annual range in your currency. These postings are individual comparisons; they do not establish a market median or total compensation.</p>
@@ -63,6 +74,7 @@ export function CareerAgent({ view }: { view: Awaited<ReturnType<typeof careerWa
           <Link href={view.watch.role ? `/jobs?q=${encodeURIComponent(view.watch.role)}` : "/jobs"} className={buttonClassName("secondary", "sm")}>Search for opportunities</Link><Link href="/career" className={buttonClassName("secondary", "sm")}>Career check-ins</Link>
         </div>
       </section>
-    </div>
+      </TabsContent>
+    </Tabs>
   </>;
 }

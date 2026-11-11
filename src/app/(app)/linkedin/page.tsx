@@ -11,6 +11,7 @@ import { linkedinConnectionView } from "@/lib/studio/linkedin";
 
 import { LinkedinConnections } from "./connections";
 import { LinkedinWorkspace } from "./workspace";
+import { LinkedinTabs } from "./section-tabs";
 
 export const metadata: Metadata = { title: "LinkedIn" };
 
@@ -22,10 +23,15 @@ export default async function LinkedinPage({ searchParams }: PageProps<"/linkedi
   ]);
   const notice = params.connection === "connected" ? "LinkedIn publishing account connected." : params.connection === "failed" ? "LinkedIn did not complete the connection. Check the developer app products and callback, then try again." : params.connection === "setup" ? "Save your LinkedIn developer app settings first." : "";
   const origin = publicOrigin(new Request("http://localhost/linkedin", { headers: requestHeaders }));
+  const connection = { view, applications: apps.map((row) => ({ id: row.id, title: [row.role, row.company].filter(Boolean).join(" · ") || "Application" })), redirectUri: `${origin}/api/linkedin/callback`, notice };
   return <>
     <PageHeader title="LinkedIn" description="Bring jobs and messages into Job Agent. Collect posts and industry sources for Publicist, then publish the copy you approve."
-      actions={<Link href="#linkedin-jobs" className="text-sm underline">Import a job</Link>} />
-    <LinkedinConnections view={view} sources={studio.sources.filter((source) => source.kind !== "NEWS")} applications={apps.map((row) => ({ id: row.id, title: [row.role, row.company].filter(Boolean).join(" · ") || "Application" }))} redirectUri={`${origin}/api/linkedin/callback`} notice={notice} />
-    <div id="linkedin-jobs"><LinkedinWorkspace postings={postings.filter((posting) => posting.source === "LINKEDIN")} today={new Date().toISOString()} /></div>
+      actions={<Link href="/linkedin?section=jobs" className="text-sm underline">Import a job</Link>} />
+    <LinkedinTabs
+      jobs={<LinkedinWorkspace postings={postings.filter((posting) => posting.source === "LINKEDIN")} today={new Date().toISOString()} />}
+      feed={<LinkedinConnections {...connection} section="feed" sources={studio.sources.filter((source) => source.kind !== "NEWS" && source.kind !== "MESSAGE")} />}
+      messages={<LinkedinConnections {...connection} section="messages" sources={studio.sources.filter((source) => source.kind === "MESSAGE")} />}
+      publishing={<LinkedinConnections {...connection} section="publishing" sources={[]} />}
+    />
   </>;
 }

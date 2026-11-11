@@ -8,6 +8,7 @@ import { PageHeader } from "@/components/page-header";
 import { toast, toastResult } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { saveFile } from "@/lib/save-file";
 import type { PublicistDraft, Studio } from "@/lib/studio/schema";
 
@@ -54,7 +55,7 @@ function DraftCard({ draft, account }: { draft: PublicistDraft; account: Account
     {draft.status === "PUBLISHED" && draft.postUrn && <a href={`https://www.linkedin.com/feed/update/${encodeURIComponent(draft.postUrn)}/`} className="text-sm underline" target="_blank" rel="noreferrer">Open published post</a>}
     {(draft.status === "SENDING" || draft.status === "CHECK_LINKEDIN") && <p className="text-sm text-muted">CareerAI will not retry this post. Check LinkedIn for the result.</p>}
     {draft.status === "DRAFT" && draft.format === "POST" && <div className="space-y-2 border-t border-line pt-3">
-      {!account ? <p className="text-sm text-muted"><Link href="/linkedin#publishing" className="underline">Connect LinkedIn</Link> to publish from here, or copy the draft.</p> : draft.body.length > 3000 ? <p className="text-sm text-muted">Shorten and save the draft to 3,000 characters or fewer to publish.</p> : <>
+      {!account ? <p className="text-sm text-muted"><Link href="/linkedin?section=publishing" className="underline">Connect LinkedIn</Link> to publish from here, or copy the draft.</p> : draft.body.length > 3000 ? <p className="text-sm text-muted">Shorten and save the draft to 3,000 characters or fewer to publish.</p> : <>
         <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={approved} disabled={dirty || stale || busy} onChange={(e) => setApproved(e.target.checked)} /> I reviewed this exact saved text and approve posting it publicly as {account.name || "the connected LinkedIn member"}.</label>
         <Button size="sm" disabled={!approved || dirty || stale || busy || body !== draft.body} onClick={() => start(async () => {
           setApproved(false);
@@ -70,6 +71,7 @@ function DraftCard({ draft, account }: { draft: PublicistDraft; account: Account
 export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "drafts" | "newsAuto" | "newsFeeds" | "sources">; account: Account }) {
   const router = useRouter();
   const [busy, start] = useTransition();
+  const [panel, setPanel] = useState("draft");
   const [format, setFormat] = useState<"POST" | "ARTICLE">("POST");
   const [topic, setTopic] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
@@ -77,10 +79,16 @@ export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "draf
   const sources = studio.sources.filter((source) => source.kind !== "MESSAGE");
   return <>
     <PageHeader title="Publicist agent" description="Turn your work and selected industry sources into posts and articles you can review, edit and publish." />
-    <div className="space-y-5 px-5 pb-8 lg:px-10">
+    <Tabs value={panel} onValueChange={setPanel} className="min-w-0 space-y-6 px-5 pb-8 lg:px-10">
+      <TabsList aria-label="Publicist sections">
+        <TabsTrigger value="draft">Write</TabsTrigger>
+        <TabsTrigger value="sources">Sources</TabsTrigger>
+        <TabsTrigger value="saved">Saved drafts ({studio.drafts.length})</TabsTrigger>
+      </TabsList>
+      <TabsContent value="sources" forceMount className="space-y-5 data-[state=inactive]:hidden">
       <section className="space-y-3 rounded-panel border border-line-card bg-card p-5">
         <h2 className="font-medium">Industry sources</h2>
-        <p className="text-sm text-muted">Refresh publisher feeds on demand or <Link className="underline" href="/linkedin#saved-context">add a LinkedIn post or article</Link>. Private recruiter messages and salary are excluded.</p>
+        <p className="text-sm text-muted">Refresh publisher feeds on demand or <Link className="underline" href="/linkedin?section=feed">add a LinkedIn post or article</Link>. Private recruiter messages and salary are excluded.</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
           {Object.entries(feeds).map(([id, name]) => <label key={id} className="flex gap-1.5"><input type="checkbox" checked={feedKeys.includes(id as keyof typeof feeds)} onChange={(e) => setFeedKeys(e.target.checked ? [...feedKeys, id as keyof typeof feeds] : feedKeys.filter((key) => key !== id))} /> {name}</label>)}
           <Button variant="secondary" size="sm" disabled={busy || !feedKeys.length} onClick={() => start(async () => { const r = toastResult(await refreshStudioNews({ feeds: feedKeys })); if (r.ok) { if (r.data.errors.length) toast(`Could not refresh: ${r.data.errors.join(", ")}`); router.refresh(); } })}>Refresh industry news</Button>
@@ -102,17 +110,23 @@ export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "draf
           </div>)}
         </div>
       </section>
+      </TabsContent>
+      <TabsContent value="draft" forceMount className="max-w-[960px] data-[state=inactive]:hidden">
       <form className="space-y-3 rounded-panel border border-line-card bg-card p-5" onSubmit={(e) => { e.preventDefault(); start(async () => {
         const r = toastResult(await createPublicistDraft({ format, topic, sourceIds: selected.filter((id) => sources.some((s) => s.id === id)) }));
-        if (r.ok) { setTopic(""); router.refresh(); }
+        if (r.ok) { setTopic(""); setPanel("saved"); router.refresh(); }
       }); }}>
         <h2 className="font-medium">Draft something</h2>
         <label className="flex flex-wrap items-center gap-2 text-sm">Format<select aria-label="Format" className="rounded-control border border-line-input bg-input px-3 py-2" value={format} onChange={(e) => setFormat(e.target.value === "ARTICLE" ? "ARTICLE" : "POST")}><option value="POST">LinkedIn post</option><option value="ARTICLE">Article</option></select></label>
         <Textarea label="Your brief" rows={4} value={topic} maxLength={4000} placeholder="What did you build, learn or notice? Include what you can share publicly and the audience you want to reach." onChange={(e) => setTopic(e.target.value)} />
-        <p className="text-xs text-muted">Only your brief and selected source excerpts go to your AI provider. Drafts stay here until you publish or copy them.</p>
+        <p className="text-xs text-muted">Choose optional excerpts in the Sources tab. Only your brief and selected source excerpts go to your AI provider. Drafts stay here until you publish or copy them.</p>
         <Button type="submit" disabled={busy || topic.trim().length < 5}>{busy ? "Working…" : "Generate draft"}</Button>
       </form>
-      {studio.drafts.map((draft) => <DraftCard key={draft.id} draft={draft} account={account} />)}
-    </div>
+      </TabsContent>
+      <TabsContent value="saved" forceMount className="max-w-[960px] space-y-5 data-[state=inactive]:hidden">
+        {!studio.drafts.length && <p className="rounded-panel border border-dashed border-line-card p-6 text-sm text-muted">No drafts yet. Open Write to create a post or article.</p>}
+        {studio.drafts.map((draft) => <DraftCard key={draft.id} draft={draft} account={account} />)}
+      </TabsContent>
+    </Tabs>
   </>;
 }

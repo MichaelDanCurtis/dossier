@@ -13,11 +13,12 @@ describe("SettingsScreen", () => {
     expect(screen.getByRole("heading", { level: 1, name: "Settings" })).toBeInTheDocument();
     expect(screen.getByText(/^It's your server, so it's your call\./)).toBeInTheDocument();
     const nav = screen.getByRole("navigation", { name: "Settings sections" });
-    const links = within(nav).getAllByRole("link");
+    const links = within(nav).getAllByRole("tab");
     expect(links.map((link) => link.textContent)).toEqual(["AI provider", "Job search", "Scoring", "Job agent", "Documents", "Google", "MCP connector", "Appearance", "Your data", "About"]);
-    expect(within(nav).getByRole("link", { name: "Your data" })).toHaveAttribute("aria-current", "page");
-    expect(within(nav).getByRole("link", { name: "Your data" })).toHaveAttribute("href", "/settings?section=data");
-    expect(within(nav).getByRole("link", { name: "About" })).not.toHaveAttribute("aria-current");
+    expect(within(nav).getByRole("tab", { name: "Your data" })).toHaveAttribute("aria-selected", "true");
+    expect(within(nav).getByRole("tab", { name: "Your data" })).toHaveAttribute("href", "/settings?section=data");
+    expect(within(nav).getByRole("tab", { name: "About" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tabpanel", { name: "Your data" })).toHaveTextContent("Section body");
     expect(screen.getByText("Section body")).toBeInTheDocument();
   });
 });

@@ -8,15 +8,15 @@ import { useState } from "react";
 
 import { DragHandle, MoveButton, useRowSorting } from "@/components/reorder-controls";
 import { cn } from "@/lib/cn";
+import { SectionTabs } from "@/components/section-tabs";
 
 import { sectionHref, type NavSection, type ProfilePage } from "./sections";
 
 type Row = NavSection & { count: string };
 
 /**
- * The Profile page's sections (#337): a link to each, to drag or move with
- * buttons. The buttons show when the row is hovered or reached with the
- * keyboard, where they take the count's place.
+ * Profile tabs show counts; the optional reorder control retains drag handles
+ * and keyboard buttons without taking up a second navigation column.
  */
 export function SectionNav({ rows, current, onMove }: { rows: Row[]; current: ProfilePage; onMove: (rows: string[]) => void }) {
   const [announcement, setAnnouncement] = useState("");
@@ -24,7 +24,15 @@ export function SectionNav({ rows, current, onMove }: { rows: Row[]; current: Pr
   const { move, context } = useRowSorting({ keys, nameOf: (key) => rows.find((row) => row.id === key)?.label ?? "", onMove, announce: setAnnouncement });
 
   return (
-    <nav aria-label="Profile sections">
+    <div className="min-w-0 space-y-3">
+      <SectionTabs scope="profile" label="Profile sections" current={current} entries={[
+        ...rows.map((row) => ({ id: row.id, label: row.label, count: row.count, title: row.optional ? "Optional section" : undefined, href: sectionHref(row.id) })),
+        { id: "new", label: "+ Add a section", href: sectionHref("new") },
+      ]} />
+      <details className="text-sm">
+        <summary className="w-fit cursor-pointer text-muted hover:text-ink">Reorder sections</summary>
+        <p className="mt-3 max-w-xl text-xs text-muted">Drag or use the arrow buttons. Resumes use this order unless one has its own.</p>
+        <div className="mt-3 max-w-md rounded-panel border border-line-card bg-card p-3">
       <DndContext {...context}>
         <SortableContext items={keys} strategy={verticalListSortingStrategy}>
           <ul className="flex flex-col gap-0.5">
@@ -42,17 +50,12 @@ export function SectionNav({ rows, current, onMove }: { rows: Row[]; current: Pr
           </ul>
         </SortableContext>
       </DndContext>
-      <Link
-        href={sectionHref("new")}
-        aria-current={current === "new" ? "page" : undefined}
-        className={cn("mt-0.5 block rounded-control py-[9px] pr-3 pl-8 text-sm text-muted hover:bg-hover hover:text-ink", current === "new" && "bg-selected font-medium text-ink hover:bg-selected")}
-      >
-        + Add a section
-      </Link>
+        </div>
+      </details>
       <span role="status" className="sr-only">
         {announcement}
       </span>
-    </nav>
+    </div>
   );
 }
 

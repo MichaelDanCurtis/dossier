@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
+import { SectionPanel } from "@/components/section-tabs";
 import { SavedIndicator } from "@/components/saved-indicator";
 import { buttonClassName } from "@/components/ui/button";
 import { toastResult } from "@/components/toast";
@@ -122,20 +123,14 @@ export function ProfileEditor({ initial, section, order, sections }: { initial: 
         }
       />
 
-      <div className="flex flex-wrap items-start gap-x-12 gap-y-10 px-10 pt-2 pb-20">
-        <div className="flex max-w-[260px] min-w-[220px] flex-[1_1_240px] flex-col gap-6">
-          <StrengthMeter profile={profile} />
+      <div className="flex min-w-0 flex-col gap-6 px-5 pt-2 pb-20 lg:px-10">
+        <div className="max-w-md"><StrengthMeter profile={profile} /></div>
           <SectionNav
             rows={nav.map((entry) => ({ ...entry, count: customOf(entry.id)?.items.length.toString() ?? counts[entry.id as SectionId] }))}
             current={section}
             onMove={(rows) => void moveRows(rows)}
           />
-          <p className="text-label text-pretty text-muted">
-            Drag to reorder. Resumes use this order unless one has its own, and two-column themes keep some sections in the sidebar.
-          </p>
-        </div>
-
-        <div className="flex max-w-[760px] min-w-0 flex-[999_1_420px] flex-col gap-6">
+        <SectionPanel scope="profile" current={section} className="flex w-full max-w-[960px] flex-col gap-6">
           {section === "new" ? (
             <>
               <div className="flex flex-col gap-1.5">
@@ -163,7 +158,7 @@ export function ProfileEditor({ initial, section, order, sections }: { initial: 
 
             {custom ? <CustomSectionEditor key={custom.id} section={custom} update={setProfile} onDeleted={sectionDeleted} onRestored={addSection} /> : body[section as SectionId]}
 
-            <div className="flex items-center justify-between gap-3 pt-2">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-2">
               {previous ? (
                 <Link href={sectionHref(previous.id)} className={buttonClassName("text")}>
                   ← {previous.label}
@@ -184,7 +179,7 @@ export function ProfileEditor({ initial, section, order, sections }: { initial: 
               </>
             )
           )}
-        </div>
+        </SectionPanel>
       </div>
     </TrackSaveContext>
   );

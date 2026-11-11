@@ -60,3 +60,16 @@ Publishing requires review of the exact saved text and connected member. Changes
 invalidate approval. Durable reservation prevents duplicates; ambiguous delivery
 requires checking LinkedIn and cannot be automatically retried. No real LinkedIn
 post or paid AI request is required or performed by fixture verification.
+
+## Section navigation
+
+Profile, Settings, LinkedIn and Agents use shared URL-backed tabs. Profile
+reordering is available under Reorder sections. LinkedIn separates Jobs, Feed &
+sources, Messages and Publishing; all local forms stay mounted when switching
+tabs or using Back/Forward. Existing section URLs and old LinkedIn hash links
+continue to work. Keyboard arrows/Home/End move focus, and Enter/Space opens a
+URL-backed tab.
+
+Career Agent, Publicist and Personal Website use task tabs that preserve local
+drafts and selections. Generated drafts open Saved drafts, and a website preview
+opens Preview & export. The main sidebar is unchanged.

@@ -12,22 +12,23 @@ const rows = [row("basics", "Basics", "5/5"), row("skills", "Skills", "12"), row
 describe("SectionNav", () => {
   it("links to each section, with its count, and marks the current one", () => {
     render(<SectionNav rows={rows} current="skills" onMove={vi.fn()} />);
-    expect(screen.getByRole("link", { name: "Skills 12" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Skills 12" })).toHaveAttribute("href", "/profile?section=skills");
-    expect(screen.getByRole("link", { name: "Basics 5/5" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: /Facts about me/ })).toHaveTextContent("optional");
+    expect(screen.getByRole("tab", { name: "Skills 12" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("tab", { name: "Skills 12" })).toHaveAttribute("href", "/profile?section=skills");
+    expect(screen.getByRole("tab", { name: "Basics 5/5" })).toHaveAttribute("aria-selected", "false");
+    expect(screen.getByRole("tab", { name: /Facts about me/ })).toHaveAttribute("title", "Optional section");
   });
 
   it("adds a section from the list", () => {
     render(<SectionNav rows={rows} current="new" onMove={vi.fn()} />);
-    expect(screen.getByRole("link", { name: "+ Add a section" })).toHaveAttribute("href", "/profile?section=new");
-    expect(screen.getByRole("link", { name: "+ Add a section" })).toHaveAttribute("aria-current", "page");
+    expect(screen.getByRole("tab", { name: "+ Add a section" })).toHaveAttribute("href", "/profile?section=new");
+    expect(screen.getByRole("tab", { name: "+ Add a section" })).toHaveAttribute("aria-selected", "true");
   });
 
   it("moves any row, Basics and the Facts too, and says so", async () => {
     const user = userEvent.setup();
     const onMove = vi.fn();
     render(<SectionNav rows={rows} current="basics" onMove={onMove} />);
+    await user.click(screen.getByText("Reorder sections"));
     await user.click(screen.getByRole("button", { name: "Move “Basics” down" }));
     expect(onMove).toHaveBeenLastCalledWith(["skills", "basics", "facts"]);
     expect(screen.getByText("“Basics” moved to position 2 of 3.")).toBeInTheDocument();
@@ -39,6 +40,7 @@ describe("SectionNav", () => {
     const user = userEvent.setup();
     const onMove = vi.fn();
     render(<SectionNav rows={rows} current="basics" onMove={onMove} />);
+    await user.click(screen.getByText("Reorder sections"));
     await user.click(screen.getByRole("button", { name: "Move “Basics” up" }));
     await user.click(screen.getByRole("button", { name: "Move “Facts about me” down" }));
     expect(onMove).not.toHaveBeenCalled();

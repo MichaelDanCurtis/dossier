@@ -1,19 +1,17 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { PageHeader } from "@/components/page-header";
 import { SavedIndicator } from "@/components/saved-indicator";
 import { TrackSaveContext, useSaveTracker } from "@/components/save-tracker";
-import { cn } from "@/lib/cn";
+import { SectionPanel, SectionTabs } from "@/components/section-tabs";
 
 import { SETTINGS_SECTIONS, settingsSectionHref, type SettingsSectionId } from "./sections";
 
 /**
- * The Settings frame (E10-1): the section list on the left, the section on
- * the right, stacked on narrow windows. Every control saves on its own; the
- * header says when it's done.
+ * Settings sections share URL-backed tabs. Each control saves independently;
+ * the header reports the aggregate save state.
  */
 export function SettingsScreen({ section, children }: { section: SettingsSectionId; children: ReactNode }) {
   const saves = useSaveTracker();
@@ -25,23 +23,10 @@ export function SettingsScreen({ section, children }: { section: SettingsSection
         description="It's your server, so it's your call. Choose which AI writes for you, set your document defaults, and take your data with you whenever you like."
         actions={section === "appearance" ? <span className="text-meta text-muted">Browser appearance</span> : <SavedIndicator status={saves.status} savedAt={saves.savedAt} />}
       />
-      <div className="app-settings-layout flex flex-wrap items-start gap-x-12 gap-y-8 px-10 pb-20">
-        <nav aria-label="Settings sections" className="app-settings-nav flex max-w-[220px] min-w-[200px] flex-[1_1_200px] flex-col gap-0.5">
-          {SETTINGS_SECTIONS.map((entry) => (
-            <Link
-              key={entry.id}
-              href={settingsSectionHref(entry.id)}
-              aria-current={entry.id === section ? "page" : undefined}
-              className={cn(
-                "rounded-control px-3 py-[9px] text-sm hover:bg-hover hover:text-ink",
-                entry.id === section ? "bg-selected font-medium text-primary-text hover:bg-selected" : "text-ink",
-              )}
-            >
-              {entry.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="flex max-w-[760px] min-w-0 flex-[999_1_420px] flex-col gap-5">{children}</div>
+      <div className="flex min-w-0 flex-col gap-7 px-5 pb-20 lg:px-10">
+        <SectionTabs scope="settings" label="Settings sections" current={section}
+          entries={SETTINGS_SECTIONS.map((entry) => ({ ...entry, href: settingsSectionHref(entry.id) }))} />
+        <SectionPanel scope="settings" current={section} className="flex w-full max-w-[960px] flex-col gap-5">{children}</SectionPanel>
       </div>
     </TrackSaveContext>
   );
