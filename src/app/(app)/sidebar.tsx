@@ -7,7 +7,6 @@ import type { Release } from "@/lib/releases";
 import type { ColorScheme } from "@/lib/ui-preferences";
 
 import { NavLinks } from "./nav-links";
-import { RepositoryLink } from "./repository-link";
 import { SidebarFrame } from "./sidebar-frame";
 import { ThemeToggle } from "./theme-toggle";
 import { UpdateNotice } from "./update-notice";
@@ -89,7 +88,6 @@ export function Sidebar({
           <Palette size={16} aria-hidden="true" className="shrink-0" />
           <span className="group-data-collapsed/sidebar:sr-only">Appearance</span>
         </Link>
-        <RepositoryLink />
       </div>
 
       <div className="flex items-center gap-2 border-t border-line px-4 py-3 group-data-collapsed/sidebar:flex-col group-data-collapsed/sidebar:px-1">
@@ -102,7 +100,6 @@ export function Sidebar({
         </span>
         <span className="flex min-w-0 flex-1 flex-col group-data-collapsed/sidebar:hidden">
           <span className="truncate text-xs font-medium">{userName}</span>
-          <span className="truncate text-[11px] text-muted">{desktop ? "On this computer" : "Self-hosted"} · v{currentVersion}</span>
         </span>
         {!desktop && (
           <form action={signOut}>

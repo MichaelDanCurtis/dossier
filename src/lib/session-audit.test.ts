@@ -15,6 +15,9 @@ const OPEN_ROUTES = new Set([
   // Google's redirect comes from Google's site, so route()'s same-origin check
   // would refuse it; it checks the session and its signed state itself (E15-1).
   "src/app/api/google/callback/route.ts",
+  // LinkedIn's consent redirect is cross-site too. It checks the session,
+  // browser state cookie and a short-lived, single-use database state.
+  "src/app/api/linkedin/callback/route.ts",
   // The Claude connector (#221) is called by Claude, not the browser: it
   // checks its OAuth token instead, and answers 404 while it's off.
   "src/app/api/mcp/route.ts",
@@ -86,6 +89,13 @@ describe("session checks (E11-5)", () => {
     for (const file of [...OPEN_ROUTES].filter((entry) => /\/api\/(mcp|oauth)\//.test(entry))) {
       expect(read(file), file).toContain("if (!(await connectorSince())) return new Response(null, { status: 404 });");
     }
+  });
+
+  it("checks the session and browser-bound state in LinkedIn's callback", () => {
+    const source = read("src/app/api/linkedin/callback/route.ts");
+    expect(source).toContain("await getSession()");
+    expect(source).toContain("state === request.cookies.get(linkedinStateCookie)?.value");
+    expect(source).toContain("await completeLinkedin(");
   });
 
   it("defines every route handler with route()", () => {

@@ -46,6 +46,8 @@ export async function register() {
     // Optional private career check-ins; off until enabled in Career.
     const { startCareerSchedule } = await import("@/lib/career/schedule");
     startCareerSchedule();
+    const { startStudioNewsSchedule } = await import("@/lib/studio/schedule");
+    startStudioNewsSchedule();
 
     // Startups' daily refresh, once it was refreshed by hand and while the screen is in use (#222).
     const { startStartupsSchedule } = await import("@/lib/startups/schedule");

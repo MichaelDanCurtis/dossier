@@ -107,7 +107,7 @@ export function ResumeDocument({ theme, profile, paper, layout, sections = DEFAU
   const drawn: Record<string, ReactNode> = {
     summary: content.summary && (
       <DocumentSection key="summary" title={sectionHeading(sections, "summary", labels.profile)}>
-        {renderUnit({ id: "summary", children: <p className={styles.summary}>{content.summary}</p> })}
+        {renderUnit({ id: "summary", children: <p className={styles.summary}><CitationText text={content.summary} /></p> })}
       </DocumentSection>
     ),
     experience: content.experience.length > 0 && (
@@ -167,7 +167,7 @@ export function ResumeDocument({ theme, profile, paper, layout, sections = DEFAU
               id: `education:${entry.id}`,
               className: styles.entry,
               head: <EntryHead title={entry.degree} at={entry.school} dates={entry.dates} timeline={resolved.timeline} />,
-              children: entry.notes && <p className={styles.muted}>{entry.notes}</p>,
+              children: entry.notes && <p className={styles.muted}><CitationText text={entry.notes} /></p>,
             })}
           </Fragment>
         ))}

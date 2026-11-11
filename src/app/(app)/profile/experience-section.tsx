@@ -96,7 +96,7 @@ function ExperienceForm({
           onChange={(event) => set({ current: event.target.checked })}
         />
       </div>
-      <BulletsField placeholder="One point per line. Rough is fine." value={entry.bullets} onChange={(bullets) => set({ bullets })} />
+      <BulletsField field={`Experience: ${entry.role || "new role"} at ${entry.company || "company not provided"}`} placeholder="One point per line. Rough is fine." value={entry.bullets} onChange={(bullets) => set({ bullets })} />
     </div>
   );
 }

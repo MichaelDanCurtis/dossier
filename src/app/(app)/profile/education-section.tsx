@@ -2,7 +2,7 @@
 
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { WritingField } from "@/components/writing/writing-field";
 import { useAutosave } from "@/hooks/use-autosave";
 import { formatDateRange, type EducationItem, type EntryOrder, type ProfileData } from "@/lib/profile";
 
@@ -60,13 +60,15 @@ function EducationForm({
           onChange={(event) => set({ current: event.target.checked })}
         />
       </div>
-      <Textarea
+      <WritingField
+        field={`Education notes: ${entry.degree} at ${entry.school}`}
+        maxLength={5000}
         className="col-span-2"
         label="Notes"
         placeholder="Thesis, honours, anything worth mentioning"
         rows={3}
         value={entry.notes}
-        onChange={(event) => set({ notes: event.target.value })}
+        onText={(notes) => set({ notes })}
       />
     </div>
   );

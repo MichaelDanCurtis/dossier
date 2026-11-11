@@ -150,6 +150,39 @@ When someone asks for their data, **Export** in Settings → Your data gives eve
 
 ## Optional private-account companion in this fork
 
+### CareerAI writing and agent workspaces
+
+Profile and resume wording help sends the selected passage, your editing notes
+and a bounded profile context (without contact fields or references) to your
+configured AI provider. You review and accept a suggestion before it replaces
+text. Saved resume wording retains the existing version and export behavior.
+
+Career watch stores your role, employer and optional annual pay in your private
+database. Exact current and target pay are excluded from career-review prompts
+and publicist prompts. Career reviews can include published job ranges and your
+relative position against those individual ranges.
+
+LinkedIn posts, job descriptions and recruiter messages are imported only when
+you supply them. Explicit message review sends that message to your AI provider.
+Publicist generation sends your brief and selected non-message source excerpts;
+it does not read private messages or your salary. Imported content and drafts
+are retained until removed or the workspace is deleted, and are included in your
+personal data export.
+
+Optional LinkedIn publishing sends an OAuth authorization and identity request to
+LinkedIn and sends the exact approved post to the connected member's public
+feed. Encrypted app secrets/tokens remain local and are excluded from portable
+exports. Disconnect removes the local token; revoke access in LinkedIn settings
+to revoke it at LinkedIn. Personal feed and inbox synchronization are not
+implemented. Delete everything removes these local settings and sources.
+
+Publicist news refresh sends ordinary public-feed requests to the selected AWS,
+CNCF and Microsoft publishers, without profile or salary data. Daily refresh is
+off until enabled. It collects sources only and never generates or posts on its
+own.
+
+### Account isolation
+
 Each invited person has a separate app process, database, encryption secret,
 storage volume and Docker network. The VPS administrator can access the host and
 all accounts' data; this does not protect users from the host operator.

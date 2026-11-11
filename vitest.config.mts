@@ -1,4 +1,5 @@
 import react from "@vitejs/plugin-react";
+import { fileURLToPath } from "node:url";
 import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
@@ -9,8 +10,7 @@ export default defineConfig({
     alias: {
       // `server-only` throws outside a React Server Components bundle, which
       // tests aren't. Next.js still enforces it in the app.
-      "server-only": new URL("./src/test/empty-module.ts", import.meta.url)
-        .pathname,
+      "server-only": fileURLToPath(new URL("./src/test/empty-module.ts", import.meta.url)),
     },
   },
   test: {

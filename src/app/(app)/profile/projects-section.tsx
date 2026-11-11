@@ -77,7 +77,7 @@ function ProjectForm({
           onChange={(event) => set({ current: event.target.checked })}
         />
       </div>
-      <BulletsField placeholder="One point per line: what you built, how, and what came of it." value={entry.bullets} onChange={(bullets) => set({ bullets })} />
+      <BulletsField field={`Project: ${entry.name || "new project"}`} placeholder="One point per line: what you built, how, and what came of it." value={entry.bullets} onChange={(bullets) => set({ bullets })} />
     </div>
   );
 }
