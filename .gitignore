@@ -81,3 +81,6 @@ desktop/**/test-results
 /deploy/private-accounts/.provision.lock
 /deploy/private-accounts/docker-compose.yml
 /deploy/private-accounts/deployment-source.zip
+
+# Built from extensions/careerai-job-clipper during release builds.
+/public/careerai-job-clipper.zip

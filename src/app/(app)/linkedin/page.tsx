@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { headers } from "next/headers";
 
+import { ChromeJobExtension } from "./chrome-extension";
 import { PageHeader } from "@/components/page-header";
 import { publicOrigin } from "@/lib/google/origin";
 import { listPostings } from "@/lib/postings";
@@ -30,6 +31,7 @@ export default async function LinkedinPage({ searchParams }: PageProps<"/linkedi
     <PageHeader title="LinkedIn" description="Bring jobs and messages into Job Agent. Collect posts and industry sources for Publicist, then publish the copy you approve."
       actions={<Link href="/linkedin?section=jobs" className="text-sm underline">Import a job</Link>} />
     <LinkedinTabs
+      extension={<ChromeJobExtension available={process.env.DOSSIER_ACCOUNT_GATEWAY === "on"} />}
       browser={<LinkedinBrowserBridge configured={bridgeConfigured()} />}
       jobs={<LinkedinWorkspace postings={postings.filter((posting) => posting.source === "LINKEDIN")} today={new Date().toISOString()} />}
       feed={<LinkedinConnections {...connection} section="feed" sources={studio.sources.filter((source) => source.kind !== "NEWS" && source.kind !== "MESSAGE")} />}

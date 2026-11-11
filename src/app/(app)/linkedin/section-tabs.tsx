@@ -6,6 +6,7 @@ import { useEffect, type ReactNode } from "react";
 import { SectionPanel, SectionTabs } from "@/components/section-tabs";
 
 const sections = [
+  { id: "extension", label: "Chrome extension" },
   { id: "browser", label: "Browser bridge" },
   { id: "jobs", label: "Jobs" },
   { id: "feed", label: "Feed & sources" },
@@ -15,7 +16,7 @@ const sections = [
 type Section = typeof sections[number]["id"];
 
 /** Keep imports and credentials in memory while changing tabs or using Back. */
-export function LinkedinTabs({ jobs, feed, messages, publishing, browser }: Record<Section, ReactNode>) {
+export function LinkedinTabs({ jobs, feed, messages, publishing, browser, extension }: Record<Section, ReactNode>) {
   const params = useSearchParams();
   const section = sections.find((item) => item.id === params.get("section"))?.id ?? (params.has("connection") ? "publishing" : "jobs");
   useEffect(() => {
@@ -25,7 +26,7 @@ export function LinkedinTabs({ jobs, feed, messages, publishing, browser }: Reco
       window.history.replaceState(null, "", url);
     }
   }, []);
-  const panels = { jobs, feed, messages, publishing, browser };
+  const panels = { jobs, feed, messages, publishing, browser, extension };
   return <div className="min-w-0 space-y-6 px-5 pb-10 lg:px-10">
     <SectionTabs scope="linkedin" label="LinkedIn sections" current={section}
       entries={sections.map((item) => ({ ...item, href: `/linkedin?section=${item.id}` }))}

@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "CareerAI — Save LinkedIn jobs",
+  "version": "0.1.0",
+  "description": "Review and save the LinkedIn job you are viewing to your private CareerAI account.",
+  "permissions": [
+    "activeTab",
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://careerai.thecurtis.cloud/*"
+  ],
+  "action": {
+    "default_title": "Save a job to CareerAI",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "128": "icon.png"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'none'; connect-src https://careerai.thecurtis.cloud"
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA6vpHMMeM4xuWxvkFGjKeUPwV85rjHhtfkZpDvtDjznlAv6XDn/zNAXQZ6Tx3ryy2QVvau1FEt+NOHsgeBsloA9TSJ+ruRO8WtL1cjXdrHrr6BJe6BJ+mzUXmR6htLevHQKVlhS6dKvPfhIjrvy2dBy+p7wO7uL7GDyRQDG4MR7SoIs/NIiOOLMsIu1BkOuyMwoTtb+EnsMMqYWlL+wcUv21fxPzye59/l39X6xvlh+PFLpB0kcxCiOtFK4T6hVGsyZC2QilSUDMgCqUXChjZwF/rtmtcmRBppeYjU5eWzrEHHvfnLMIJNdL6jO9jTmknXgsV0jBNABunz4UFUx7BjQIDAQAB",
+  "icons": {
+    "128": "icon.png"
+  }
+}

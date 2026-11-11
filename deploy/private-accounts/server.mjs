@@ -4,6 +4,7 @@ import { createReadStream } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { COOKIE, PERSISTENT_SECONDS, checkPassword, createSession, dossierMcpToken, dossierSession, hashPassword, parseCookies, sessionUser, validUsername } from './auth.mjs';
 import { createOAuth } from './oauth.mjs';
+import { createJobImportAccess, extensionOrigin } from './job-import.mjs';
 import { page } from './ui.mjs';
 
 const escapeHtml = (text) => String(text).replace(/[&<>"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -24,6 +25,7 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
   const dummyHash = hashPassword('not-an-account-password');
   let activeChecks = 0;
   const oauth = createOAuth({ origin: publicUrl.origin, databasePath: tokenDbPath, now, connector: connectorImpl ?? connector });
+  const jobImports = createJobImportAccess({ databasePath: tokenDbPath === ':memory:' ? ':memory:' : tokenDbPath + '.jobs', now });
   const accountCookie = (value, age) => `${COOKIE}=${value}; Path=/; Secure; HttpOnly; SameSite=Lax${age === undefined ? '' : `; Max-Age=${age}`}`;
   const clearCookie = () => accountCookie('', 0);
 
@@ -93,7 +95,7 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
   async function proxy(request, response, authenticated) {
     const { user, persistent } = authenticated;
     const upstream = new URL(user.upstream);
-    const outgoing = { ...request.headers };
+    const outgoing = authenticated.jobImport ? { 'content-type': 'application/json', ...(request.headers['content-length'] ? { 'content-length': request.headers['content-length'] } : {}) } : { ...request.headers };
     const connectionHeaders = String(request.headers.connection ?? '').toLowerCase().split(',').map((name) => name.trim());
     for (const name of Object.keys(outgoing)) {
       if (hopHeaders.has(name) || connectionHeaders.includes(name) || name === 'forwarded' || name.startsWith('x-forwarded-') || name.startsWith('x-dossier-') || name === 'authorization') delete outgoing[name];
@@ -102,14 +104,15 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
     outgoing['x-forwarded-host'] = publicUrl.host;
     outgoing['x-forwarded-proto'] = publicUrl.protocol.slice(0, -1);
     outgoing['x-forwarded-for'] = clientIp(request);
+    if (authenticated.jobImport) { outgoing.origin = publicUrl.origin; outgoing['sec-fetch-site'] = 'same-origin'; }
     const cookieParts = [];
-    for (const [name, value] of parseCookies(request.headers.cookie)) {
+    for (const [name, value] of parseCookies(authenticated.jobImport ? undefined : request.headers.cookie)) {
       if (![COOKIE, 'dossier_session', 'dossier_browser'].includes(name) && value !== null) cookieParts.push(`${name}=${value}`);
     }
     cookieParts.push(`dossier_session=${await dossierSession(user, persistent)}`);
     outgoing.cookie = cookieParts.join('; ');
     if (authenticated.mcp) outgoing.authorization = `Bearer ${await dossierMcpToken(user, authenticated.mcp.generation, authenticated.mcp.client_id)}`;
-    const proxied = http.request({ hostname: upstream.hostname, port: upstream.port || 80, method: request.method, path: request.url, headers: outgoing }, (received) => {
+    const proxied = http.request({ hostname: upstream.hostname, port: upstream.port || 80, method: request.method, path: authenticated.jobImport ? "/api/linkedin/extension" : request.url, headers: outgoing }, (received) => {
       const responseHeaders = { ...received.headers };
       const connected = String(received.headers.connection ?? '').toLowerCase().split(',').map((name) => name.trim());
       for (const name of [...hopHeaders, ...connected]) delete responseHeaders[name];
@@ -118,6 +121,7 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
       // Native Dossier's Sign out action also signs out of the account gateway.
       if (cookies.some((cookie) => /^dossier_session=(?:;|\s*;|$)/.test(cookie) || /^dossier_session=.*;\s*Max-Age=0(?:;|$)/i.test(cookie))) responseHeaders['set-cookie'].push(clearCookie());
       if (!responseHeaders['set-cookie'].length) delete responseHeaders['set-cookie'];
+      if (authenticated.jobImport) { delete responseHeaders['set-cookie']; responseHeaders['access-control-allow-origin'] = request.headers.origin; responseHeaders.vary = 'Origin'; }
       responseHeaders['cache-control'] = 'private, no-store';
       responseHeaders['x-content-type-options'] = 'nosniff';
       if (publicUrl.protocol === 'https:') responseHeaders['strict-transport-security'] = 'max-age=31536000';
@@ -163,6 +167,32 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
           if (url.pathname === '/api/oauth/revoke') { await oauth.revoke(params, config); return reply(response, 200, '{}', 'application/json'); }
           return reply(response, 200, JSON.stringify(await oauth.exchange(params, config)), 'application/json');
         } catch (problem) { return reply(response, problem.status ?? 400, JSON.stringify({ error: problem.oauthCode ?? 'invalid_request' }), 'application/json'); }
+      }
+      // Cross-origin access is limited to an import-only credential and this one native route.
+      if (['/api/extension/pair', '/api/extension/jobs', '/api/extension/revoke'].includes(url.pathname)) {
+        const extension = request.headers.origin;
+        if (!extensionOrigin(extension)) return reply(response, 403, '{"error":"Use the CareerAI Chrome extension."}', 'application/json');
+        response.setHeader('access-control-allow-origin', extension);
+        response.setHeader('vary', 'Origin');
+        if (request.method === 'OPTIONS') {
+          response.setHeader('access-control-allow-methods', 'POST');
+          response.setHeader('access-control-allow-headers', 'authorization, content-type');
+          return reply(response, 204, '', 'application/json');
+        }
+        if (request.method !== 'POST') return reply(response, 405, '{"error":"Method not allowed."}', 'application/json');
+        if (!String(request.headers['content-type']).startsWith('application/json')) return reply(response, 415, '{"error":"Use JSON job details."}', 'application/json');
+        if (url.pathname === '/api/extension/pair') {
+          let bytes = 0, chunks = [];
+          for await (const chunk of request) { bytes += chunk.length; if (bytes > 1024) return reply(response, 413, '{}', 'application/json'); chunks.push(chunk); }
+          try { const result = jobImports.exchange(JSON.parse(Buffer.concat(chunks).toString()).code, extension, config); return reply(response, 200, JSON.stringify(result), 'application/json'); }
+          catch { return reply(response, 400, '{"error":"Invalid or expired pairing code. Create a new one in CareerAI."}', 'application/json'); }
+        }
+        let access;
+        try { access = jobImports.authenticate(/^Bearer (\S+)$/.exec(request.headers.authorization ?? '')?.[1], extension, config, url.pathname === '/api/extension/jobs'); }
+        catch { return reply(response, 429, '{"error":"Too many saves. Wait a minute before trying again."}', 'application/json'); }
+        if (!access) return reply(response, 401, '{"error":"Extension access expired or was revoked. Pair CareerAI again."}', 'application/json');
+        if (url.pathname === '/api/extension/revoke') { jobImports.revoke(access.user, access.id); request.resume(); return reply(response, 200, '{}', 'application/json'); }
+        return await proxy(request, response, { user: access.user, persistent: false, jobImport: true });
       }
       if (url.pathname === '/api/mcp') {
         if (!['GET', 'POST', 'DELETE'].includes(request.method)) return reply(response, 405, 'Method not allowed', 'text/plain');
@@ -245,6 +275,18 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
         response.on('close', () => file.destroy());
         return;
       }
+      if (url.pathname === '/_accounts/api/job-extension') {
+        if (request.method === 'GET') return reply(response, 200, JSON.stringify({ connections: jobImports.list(authenticated.user) }), 'application/json');
+        if (request.method !== 'POST') return reply(response, 405, '{}', 'application/json');
+        if (!sameOrigin(request)) return reply(response, 403, '{"error":"Request refused."}', 'application/json');
+        const form = await readForm(request);
+        if (form.get('operation') === 'pair') {
+          try { return reply(response, 200, JSON.stringify(jobImports.pair(authenticated.user)), 'application/json'); }
+          catch (error) { return reply(response, 409, JSON.stringify({ error: error.message }), 'application/json'); }
+        }
+        if (form.get('operation') === 'revoke' && /^(all|[a-f0-9]{32})$/.test(form.get('id') ?? '')) { jobImports.revoke(authenticated.user, form.get('id')); return reply(response, 200, JSON.stringify({ connections: jobImports.list(authenticated.user) }), 'application/json'); }
+        return reply(response, 400, '{"error":"Unknown extension operation."}', 'application/json');
+      }
       if (url.pathname === '/_accounts/api/mcp') {
         if (request.method === 'GET') return reply(response, 200, JSON.stringify({ authorizations: oauth.count(authenticated.user) }), 'application/json');
         if (request.method !== 'POST') return reply(response, 405, '{}', 'application/json');
@@ -291,7 +333,7 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
   server.headersTimeout = 15_000;
   server.requestTimeout = 120_000;
   server.on('upgrade', (_request, socket) => socket.destroy());
-  server.on('close', () => oauth.close());
+  server.on('close', () => { oauth.close(); jobImports.close(); });
   return server;
 }
 

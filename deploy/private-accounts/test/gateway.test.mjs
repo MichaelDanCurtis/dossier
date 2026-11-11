@@ -257,3 +257,24 @@ test('theme fonts are local allowlisted assets', async (t) => {
   }
   assert.equal((await f.request('/_accounts/assets/fonts/unknown.woff2')).status, 404);
 });
+
+test('extension credentials import only into the paired account and cannot become MCP/native sessions', async (t) => {
+  const f = await fixture(t), { cookie } = await f.login('alice');
+  const extension = 'chrome-extension://' + 'a'.repeat(32);
+  const pairCode = async () => (await (await f.request('/_accounts/api/job-extension', { method: 'POST', headers: { origin: f.origin, cookie }, body: new URLSearchParams({ operation: 'pair' }) })).json()).code;
+  const code = await pairCode(); assert.equal(typeof code, 'string');
+  const pair = await f.request('/api/extension/pair', { method: 'POST', headers: { origin: extension, 'content-type': 'application/json' }, body: JSON.stringify({ code }) });
+  assert.equal(pair.status, 200); assert.equal(pair.headers.get('access-control-allow-origin'), extension);
+  const { token } = await pair.json(), headers = { origin: extension, 'content-type': 'application/json', authorization: `Bearer ${token}`, 'next-action': 'attacker', cookie: (await f.login('bravo')).cookie };
+  const saved = await f.request('/api/extension/jobs', { method: 'POST', headers, body: JSON.stringify({ approved: true, title: 'Engineer' }) });
+  assert.equal(saved.status, 200); const backend = await saved.json(); assert.equal(backend.username, 'alice'); assert.equal(backend.auth, undefined); assert.ok(!backend.cookie.includes(COOKIE));
+  const bearerOnly = { authorization: `Bearer ${token}` };
+  assert.equal((await f.request('/api/export', { headers: bearerOnly })).status, 401);
+  assert.equal((await f.request('/api/mcp', { method: 'POST', headers: { ...bearerOnly, origin: f.origin }, body: '{}' })).status, 401);
+  assert.equal((await f.request('/api/extension/jobs', { method: 'POST', headers: { ...headers, origin: 'https://evil.test' }, body: '{}' })).status, 403);
+  const pending = await pairCode();
+  assert.equal((await f.request('/_accounts/api/job-extension', { method: 'POST', headers: { cookie, origin: 'https://evil.test' }, body: new URLSearchParams({ operation: 'revoke', id: 'all' }) })).status, 403);
+  await f.request('/_accounts/api/job-extension', { method: 'POST', headers: { cookie, origin: f.origin }, body: new URLSearchParams({ operation: 'revoke', id: 'all' }) });
+  assert.equal((await f.request('/api/extension/jobs', { method: 'POST', headers, body: '{}' })).status, 401);
+  assert.equal((await f.request('/api/extension/pair', { method: 'POST', headers: { origin: extension, 'content-type': 'application/json' }, body: JSON.stringify({ code: pending }) })).status, 400);
+});

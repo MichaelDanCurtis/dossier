@@ -3,7 +3,7 @@ WORKDIR /gateway
 COPY deploy/private-accounts/package.json deploy/private-accounts/package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts --no-audit --no-fund && npm cache clean --force
 COPY deploy/private-accounts/auth.mjs deploy/private-accounts/server.mjs ./
-COPY deploy/private-accounts/oauth.mjs ./
+COPY deploy/private-accounts/oauth.mjs deploy/private-accounts/job-import.mjs ./
 COPY deploy/private-accounts/ui.mjs ./
 COPY deploy/private-accounts/assets ./assets
 COPY public/ui-themes.css ./assets/ui-themes.css

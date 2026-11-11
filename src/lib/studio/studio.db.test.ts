@@ -152,3 +152,20 @@ describe("private agent studio and LinkedIn publishing", () => {
     expect((await loadStudio()).drafts).toEqual([]);
   });
 });
+
+describe("reviewed Chrome job imports", () => {
+  it("deduplicates canonical jobs, rejects unapproved data, and never creates an application", async () => {
+    const { POST } = await import("@/app/api/linkedin/extension/route");
+    const { NextRequest } = await import("next/server");
+    const job = { url: "https://www.linkedin.com/jobs/view/fixture-engineer-7654321/?trackingId=private", title: "Platform Engineer", company: "Example", place: "Seattle", salary: "", remote: false, text: "Build reliable infrastructure, mentor engineers and work with product teams. ".repeat(3), approved: true };
+    const send = (input: unknown) => POST(new NextRequest("https://careerai.example/api/linkedin/extension", { method: "POST", headers: { origin: "https://careerai.example", host: "careerai.example", "content-type": "application/json" }, body: JSON.stringify(input) }), undefined);
+    expect((await send({ ...job, approved: false })).status).toBe(400);
+    expect((await send({ ...job, url: "https://evil.test/jobs/view/7654321/" })).status).toBe(400);
+    expect((await send({ ...job, cookies: "do-not-accept" })).status).toBe(400);
+    const first = await send(job); expect(first.status).toBe(200); const a = await first.json();
+    const second = await send({ ...job, url: "https://www.linkedin.com/jobs/view/7654321/" }); const b = await second.json();
+    expect(a.id).toBe(b.id); expect(await db().posting.count()).toBe(1); expect(await db().application.count()).toBe(0);
+    const posting = await db().posting.findFirst(); expect(posting?.url).toBe("https://www.linkedin.com/jobs/view/7654321/");
+    expect(posting?.via).toBe("CareerAI Chrome extension · user-reviewed import");
+  });
+});
