@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // The production image runs .next/standalone: the server and only the files
   // it needs (E12-1).
   output: "standalone",
+  // A reviewed 10 MB attachment becomes about 14 MB when encoded for the
+  // private browser bridge. Keep the auth proxy from truncating that body.
+  experimental: { proxyClientMaxBodySize: 16 * 1024 * 1024 },
   // playwright-core reads some of its own files by computed paths, which the
   // tracing can't follow (browsers.json for one), so all of it goes along.
   outputFileTracingIncludes: { "/**": ["./node_modules/playwright-core/**/*"] },
