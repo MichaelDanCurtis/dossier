@@ -8,7 +8,7 @@ export function linkedinUrl(value) {
 export function resourceAllowed(value) {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && !url.port && ['linkedin.com', 'licdn.com', 'google.com', 'gstatic.com', 'recaptcha.net', 'arkoselabs.com', 'funcaptcha.com'].some((host) => url.hostname === host || url.hostname.endsWith('.' + host));
+    return url.protocol === 'https:' && !url.port && !url.username && !url.password && ['challenges.cloudflare.com', 'linkedin.com', 'licdn.com', 'google.com', 'gstatic.com', 'recaptcha.net', 'arkoselabs.com', 'funcaptcha.com'].some((host) => url.hostname === host || url.hostname.endsWith('.' + host));
   } catch { return false; }
 }
 export function jobUrl(value) {

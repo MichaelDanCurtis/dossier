@@ -1,6 +1,6 @@
 # Private LinkedIn browser bridge
 
-A server-side persistent Chromium profile per CareerAI account. No third-party MCP package, cookie export, password storage in CareerAI, stealth plugins, fingerprint changes or challenge bypass. The collector only navigates and reads job pages. No application, publishing or message tool exists in this service.
+A server-side persistent Chromium profile per CareerAI account. Cloudflare’s documented `challenges.cloudflare.com` verification resources (including its challenge subdomains) are permitted by the resource allowlist so the user can attempt verification normally. This does not solve challenges automatically or guarantee Cloudflare accepts an automated browser. No third-party MCP package, cookie export, password storage in CareerAI, stealth plugins, fingerprint changes or challenge bypass. The collector only navigates and reads job pages. No application, publishing or message tool exists in this service.
 
 ## Use
 

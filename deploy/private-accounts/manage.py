@@ -158,7 +158,7 @@ def compose_config(config):
             bridge = f"bridge-{username}"
             services[app]["environment"] = {"LINKEDIN_BRIDGE_URL": f"http://{bridge}:8090", "LINKEDIN_BRIDGE_TOKEN": token}
             services[bridge] = {
-                "image": config.get("appImage", APP_IMAGE), "command": ["node", "deploy/linkedin-bridge/server.mjs"],
+                "image": config.get("bridgeImage", config.get("appImage", APP_IMAGE)), "command": ["node", "deploy/linkedin-bridge/server.mjs"],
                 "restart": "unless-stopped", "init": True,
                 "environment": {"BRIDGE_TOKEN": token, "BRIDGE_DATA_DIR": "/data/linkedin"},
                 "volumes": [f"browser-{username}:/data"], "networks": [network],

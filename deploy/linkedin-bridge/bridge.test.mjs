@@ -10,6 +10,9 @@ test('restricted destinations and fixed collection policy', () => {
   for (const value of ['http://www.linkedin.com/', 'https://linkedin.com.evil.test/', 'https://me:secret@linkedin.com/', 'https://127.0.0.1/', 'https://www.linkedin.com:444/']) assert.throws(() => linkedinUrl(value));
   for (const value of ['http://linkedin.com/', 'https://metadata.google.internal/', 'https://169.254.169.254/', 'https://licdn.com.evil.test/', 'file:///etc/passwd']) assert.equal(resourceAllowed(value), false);
   assert.equal(resourceAllowed('https://media.licdn.com/a.png'), true);
+  assert.equal(resourceAllowed('https://challenges.cloudflare.com/turnstile/v0/api.js'), true);
+  assert.equal(resourceAllowed('https://region.challenges.cloudflare.com/cdn-cgi/challenge-platform/'), true);
+  for (const url of ['https://challenges.cloudflare.com.evil.test/api.js', 'https://notchallenges.cloudflare.com/', 'https://cloudflare.com/', 'http://challenges.cloudflare.com/', 'https://user:pass@challenges.cloudflare.com/', 'https://challenges.cloudflare.com:444/']) assert.equal(resourceAllowed(url), false);
   assert.equal(jobUrl('https://www.linkedin.com/jobs/view/role-name-123/?trackingId=secret'), 'https://www.linkedin.com/jobs/view/123/');
   assert.ok(pageProblem('https://www.linkedin.com/checkpoint/challenge/', 200));
   assert.ok(pageProblem('https://www.linkedin.com/jobs/', 429));

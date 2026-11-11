@@ -39,3 +39,28 @@ test('real Chromium viewer: user enters a field, screenshots it, and closes a pe
     await call('close', { manualId });
   } finally { await bridge.close(); bridge.server.closeAllConnections(); await new Promise((resolve) => bridge.server.close(resolve)); await rm(directory, { recursive: true, force: true }); }
 });
+
+test('normal verification script loads through the real resource policy without external network access', async () => {
+  const directory = await mkdtemp(path.join(tmpdir(), 'careerai-verification-'));
+  const token = 'offline-verification-test-'.repeat(3);
+  let context;
+  const chromium = { launchPersistentContext: async (...args) => {
+    context = await realChromium.launchPersistentContext(...args);
+    const route = context.route.bind(context);
+    context.route = async (pattern, handler) => route(pattern, (request) => handler({
+      request: () => request.request(),
+      abort: () => request.abort(),
+      continue: () => request.request().url().startsWith('https://challenges.cloudflare.com/')
+        ? request.fulfill({ status: 200, contentType: 'application/javascript', body: 'window.parent.verificationResourceLoaded = true;' })
+        : request.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><html><body><h1>Offline verification resource fixture</h1><script src="https://challenges.cloudflare.com/turnstile/v0/api.js"></script></body></html>' }),
+    }));
+    return context;
+  } };
+  const bridge = await createBridge({ token, directory, chromium });
+  await new Promise((resolve) => bridge.server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${bridge.server.address().port}/open`, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: '{}' });
+    assert.equal(response.status, 200);
+    assert.equal(await context.pages()[0].evaluate(() => window.verificationResourceLoaded), true);
+  } finally { await bridge.close(); bridge.server.closeAllConnections(); await new Promise((resolve) => bridge.server.close(resolve)); await rm(directory, { recursive: true, force: true }); }
+});
