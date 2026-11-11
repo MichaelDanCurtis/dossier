@@ -9,6 +9,8 @@ import { prisma } from "@/lib/prisma";
 import { loadStudio } from "@/lib/studio/data";
 import { linkedinConnectionView } from "@/lib/studio/linkedin";
 
+import { bridgeConfigured } from "@/lib/studio/linkedin-bridge";
+import { LinkedinBrowserBridge } from "./browser-bridge";
 import { LinkedinConnections } from "./connections";
 import { LinkedinWorkspace } from "./workspace";
 import { LinkedinTabs } from "./section-tabs";
@@ -28,6 +30,7 @@ export default async function LinkedinPage({ searchParams }: PageProps<"/linkedi
     <PageHeader title="LinkedIn" description="Bring jobs and messages into Job Agent. Collect posts and industry sources for Publicist, then publish the copy you approve."
       actions={<Link href="/linkedin?section=jobs" className="text-sm underline">Import a job</Link>} />
     <LinkedinTabs
+      browser={<LinkedinBrowserBridge configured={bridgeConfigured()} />}
       jobs={<LinkedinWorkspace postings={postings.filter((posting) => posting.source === "LINKEDIN")} today={new Date().toISOString()} />}
       feed={<LinkedinConnections {...connection} section="feed" sources={studio.sources.filter((source) => source.kind !== "NEWS" && source.kind !== "MESSAGE")} />}
       messages={<LinkedinConnections {...connection} section="messages" sources={studio.sources.filter((source) => source.kind === "MESSAGE")} />}

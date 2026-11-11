@@ -13,7 +13,8 @@ import { forgetLinkedinConnection, linkedinPublishingAccount, sendLinkedinPost, 
 import { scoreLinkedinJob } from "@/lib/studio/linkedin-job";
 import { configuredFeeds, matchesNews, refreshNews } from "@/lib/studio/news";
 import { publicFeedUrl } from "@/lib/studio/public-feed";
-import { publicistConfig, publicistProvider } from "@/lib/studio/publicist-provider";
+import { imageProvider, publicistConfig, publicistProvider } from "@/lib/studio/publicist-provider";
+import { listPublicistImageModels } from "@/lib/studio/publicist-images";
 import { publicistContext, publicistConversation } from "@/lib/studio/publicist-conversation";
 import { careerWatchSchema, customNewsFeed, publicistPreferencePatch, publicistPreferences, studioSourceInput, type PublicistDraft, type StudioSource } from "@/lib/studio/schema";
 
@@ -102,7 +103,7 @@ export const savePublicistPreferences = action(publicistPreferencePatch, async (
   if (preferences.connectionId) await publicistConfig(preferences.connectionId);
   if (preferences.imageConnectionId) {
     const config = await publicistConfig(preferences.imageConnectionId);
-    if (config.provider !== "OPENAI" || new URL(config.baseUrl).origin !== "https://api.openai.com") throw new ActionError("Use a saved OpenAI connection for image generation.");
+    if (!imageProvider(config)) throw new ActionError("Use a saved OpenAI or OpenRouter connection for image generation.");
   }
   await updateStudio((studio) => {
     studio.publicist = { ...studio.publicist, ...preferences };
@@ -147,7 +148,10 @@ export const removePublicistFeed = action(z.object({ id }), async ({ id: feedId 
   });
   refresh(); return null;
 });
-export const listPublicistModels = action(z.object({ connectionId: z.string().max(100) }), async ({ connectionId }) => {
+export const listPublicistModels = action(z.object({ connectionId: z.string().max(100), image: z.boolean().optional() }), async ({ connectionId, image }) => {
+  if (image) {
+    try { return { models: await listPublicistImageModels(connectionId) }; } catch (error) { throw new ActionError(error instanceof Error && /^(Choose |The image provider)/.test(error.message) ? error.message : "The image provider could not list available models."); }
+  }
   return ai(async () => {
     const provider = await publicistProvider(publicistPreferences.parse({ connectionId }));
     return { models: await provider.listModels(AbortSignal.timeout(15000)) };

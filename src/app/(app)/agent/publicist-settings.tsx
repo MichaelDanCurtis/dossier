@@ -19,8 +19,8 @@ export function PublicistModelSettings({ preferences, connections }: { preferenc
   const [models, setModels] = useState<string[]>([]), [imageModels, setImageModels] = useState<string[]>([]);
   const selected = connections.find((item) => settings.connectionId ? item.id === settings.connectionId : item.isDefault);
   const load = (image: boolean) => start(async () => {
-    const result = toastResult(await listPublicistModels({ connectionId: image ? settings.imageConnectionId : settings.connectionId }));
-    if (result.ok) { if (image) setImageModels(result.data.models.filter((model) => /^gpt-image-/i.test(model))); else setModels(result.data.models); }
+    const result = toastResult(await listPublicistModels({ connectionId: image ? settings.imageConnectionId : settings.connectionId, image }));
+    if (result.ok) { if (image) setImageModels(result.data.models); else setModels(result.data.models); }
   });
   return <form className="max-w-[960px] space-y-4 rounded-panel border border-line-card bg-card p-5" onSubmit={(event) => {
     event.preventDefault(); start(async () => {
@@ -46,13 +46,13 @@ export function PublicistModelSettings({ preferences, connections }: { preferenc
     <Textarea label="Public expertise and interests" rows={3} maxLength={3000} value={settings.expertise} onChange={(e) => setSettings({ ...settings, expertise: e.target.value })} placeholder="What do you know, build or care about that you’re comfortable discussing publicly?" />
     <fieldset className="space-y-3 border-t border-line pt-4">
       <legend className="text-sm font-medium">Optional image generation</legend>
-      <label className="block text-sm">OpenAI connection<select aria-label="Image AI connection" className={control} value={settings.imageConnectionId} onChange={(e) => { setSettings({ ...settings, imageConnectionId: e.target.value, imageModel: "" }); setImageModels([]); }}>
+      <label className="block text-sm">Image provider connection<select aria-label="Image AI connection" className={control} value={settings.imageConnectionId} onChange={(e) => { setSettings({ ...settings, imageConnectionId: e.target.value, imageModel: "" }); setImageModels([]); }}>
         <option value="">Image generation off</option>{connections.filter((item) => item.imageCapable).map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
       </select></label>
-      <label className="block text-sm">Image model<input aria-label="Image model" className={control} list="publicist-image-model-list" disabled={!settings.imageConnectionId} value={settings.imageModel} maxLength={200} onChange={(e) => setSettings({ ...settings, imageModel: e.target.value })} placeholder="Choose a GPT Image model from your provider" /></label>
+      <label className="block text-sm">Image model<input aria-label="Image model" className={control} list="publicist-image-model-list" disabled={!settings.imageConnectionId} value={settings.imageModel} maxLength={200} onChange={(e) => setSettings({ ...settings, imageModel: e.target.value })} placeholder="Choose an image-generation model from your provider" /></label>
       <datalist id="publicist-image-model-list">{imageModels.map((model) => <option key={model} value={model} />)}</datalist>
       <Button size="sm" variant="secondary" disabled={busy || !settings.imageConnectionId} onClick={() => load(true)}>Load image models</Button>
-      <p className="text-xs text-muted">Uses a saved OpenAI API key. Image generation is a separate paid request, only when you press Generate image. <Link className="underline" href="/settings?section=ai">Manage AI connections</Link>.</p>
+      <p className="text-xs text-muted">Uses the selected OpenAI or OpenRouter connection and its image API. No automatic provider fallback. Image generation is a separate paid request, only when you press Generate image. <Link className="underline" href="/settings?section=ai">Manage AI connections</Link>.</p>
     </fieldset>
     <Button type="submit" disabled={busy}>Save Publicist settings</Button>
   </form>;

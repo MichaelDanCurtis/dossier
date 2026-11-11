@@ -28,3 +28,32 @@ describe("explicit Publicist image requests", () => {
     expect(fake.fetch).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("OpenRouter image routing", () => {
+  const prefs = publicistPreferences.parse({ imageConnectionId: "router", imageModel: "vendor/image-model" });
+  const request = { ...input, expectedConnectionId: "router", expectedModel: "vendor/image-model" };
+  it("discovers image output and sends the key only to OpenRouter's image API", async () => {
+    fake.config.mockResolvedValue({ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", apiKey: "router-key" });
+    const png = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10, 0]);
+    fake.fetch.mockResolvedValueOnce(Response.json({ data: [{ id: "vendor/image-model", architecture: { output_modalities: ["image"] } }] })).mockResolvedValueOnce(Response.json({ data: [{ b64_json: png.toString("base64") }] }));
+    expect(await generatePublicistImage(prefs, request)).toEqual(png);
+    expect(fake.fetch.mock.calls.map((call) => call[0])).toEqual(["https://openrouter.ai/api/v1/images/models", "https://openrouter.ai/api/v1/images"]);
+    const [, options] = fake.fetch.mock.calls[1];
+    expect(options.headers.authorization).toBe("Bearer router-key");
+    expect(JSON.parse(options.body)).toMatchObject({ model: "vendor/image-model", n: 1, provider: { allow_fallbacks: false } });
+  });
+  it("does not buy an image from a text-only model", async () => {
+    fake.config.mockResolvedValue({ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", apiKey: "router-key" });
+    fake.fetch.mockResolvedValue(Response.json({ data: [{ id: "vendor/image-model", architecture: { output_modalities: ["text"] } }] }));
+    await expect(generatePublicistImage(prefs, request)).rejects.toThrow("image-generation model");
+    expect(fake.fetch).toHaveBeenCalledTimes(1);
+  });
+  it.each(["https://openrouter.ai.evil.test/api/v1", "https://openrouter.ai/other", "https://api.openai.com/v1/other"])("refuses an unrecognized endpoint %s before sending any key", async (baseUrl) => {
+    fake.config.mockResolvedValue({ provider: "OPENAI", baseUrl, apiKey: "private-key" });
+    await expect(generatePublicistImage(prefs, request)).rejects.toThrow("Choose a saved"); expect(fake.fetch).not.toHaveBeenCalled();
+  });
+  it("rejects a non-image response without fetching URLs", async () => {
+    fake.fetch.mockResolvedValue(Response.json({ data: [{ b64_json: Buffer.from('<svg onload="evil()"/>').toString('base64') }] }));
+    await expect(generatePublicistImage(preferences, input)).rejects.toThrow("supported PNG"); expect(fake.fetch).toHaveBeenCalledTimes(1);
+  });
+});

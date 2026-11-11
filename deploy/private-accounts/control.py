@@ -22,7 +22,7 @@ def run(*args, password=None, timeout=150):
 
 def provision(username):
     compose = ["docker", "compose", "-f", str(ROOT / "docker-compose.yml")]
-    run(*compose, "up", "-d", "--wait", "--wait-timeout", "120", f"db-{username}", f"app-{username}")
+    run(*compose, "up", "-d", "--wait", "--wait-timeout", "120", f"db-{username}", f"app-{username}", *([f"bridge-{username}"] if manage.load_registry().get("linkedinBridge") else []))
     # Attach the already-running gateway; no restart of existing users is needed.
     network = f"{manage.load_registry().get('projectName', 'dossier')}_account-{username}"
     gateway = run(*compose, "ps", "-q", "gateway").stdout.strip()

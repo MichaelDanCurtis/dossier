@@ -11,6 +11,9 @@ import { loadSettings } from "@/lib/settings-data";
 import { recordUsage } from "@/lib/usage-data";
 import type { PublicistPreferences } from "./schema";
 
+import { imageProvider } from "./image-provider";
+export { imageProvider } from "./image-provider";
+
 const connectionId = (value: { provider: string; baseUrl: string }) => recordHash(value.provider + " " + value.baseUrl.replace(/\/+$/, ""));
 
 export async function publicistConnections() {
@@ -19,7 +22,7 @@ export async function publicistConnections() {
   map.set(connectionId(active), { provider: active.provider, baseUrl: active.baseUrl, model: active.model ?? "", apiKeyEnc: settings.apiKeyEnc, active: true });
   return [...map.values()].map((item) => ({
     id: connectionId(item), label: providerOption(item.provider, item.baseUrl).name + (item.active ? " · app default" : ""),
-    model: item.model, isDefault: item.active, imageCapable: item.provider === "OPENAI" && URL.canParse(item.baseUrl) && new URL(item.baseUrl).origin === "https://api.openai.com",
+    model: item.model, isDefault: item.active, imageCapable: !!imageProvider(item),
   }));
 }
 

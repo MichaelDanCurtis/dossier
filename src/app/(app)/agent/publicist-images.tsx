@@ -26,18 +26,18 @@ export function PublicistImages({ preferences, visual }: { preferences: Publicis
       <p className="w-full text-xs text-muted">Search links open image sources; review the individual image’s license and attribution before using it.</p>
     </div>}
     <label className="block text-sm">Image quality<select aria-label="Image quality" className="ml-2 rounded-control border border-line-input bg-input px-3 py-2" value={quality} onChange={(e) => setQuality(e.target.value as typeof quality)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label>
-    <p className="text-xs text-muted">{ready ? `Using ${preferences.imageModel}. Generating uses OpenAI API credits; quality affects cost and latency.` : "Image generation is off. Choose a saved OpenAI connection and image model in Publicist Settings."}</p>
+    <p className="text-xs text-muted">{ready ? `Using ${preferences.imageModel}. Generating uses the selected provider’s API credits; quality affects cost and latency.` : "Image generation is off. Choose a saved OpenAI or OpenRouter connection and image model in Publicist Settings."}</p>
     <Button disabled={!ready || busy || prompt.trim().length < 10} onClick={() => start(async () => {
       try {
         const response = await fetch("/api/publicist/image", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt, quality, approved: true, expectedConnectionId: preferences.imageConnectionId, expectedModel: preferences.imageModel }) });
         if (!response.ok) { const result = await response.json(); toast(result.error || "The image could not be generated."); return; }
-        if (!response.headers.get("content-type")?.startsWith("image/png")) { toast("Sign in again before generating an image."); return; }
+        if (!/^(image\/(png|jpeg|webp))$/.test(response.headers.get("content-type") || "")) { toast("Sign in again before generating an image."); return; }
         const blob = await response.blob(); setImage({ url: URL.createObjectURL(blob), blob });
       } catch { toast("Image generation could not be confirmed. Check provider usage before trying again."); }
     })}>{busy ? "Generating image…" : "Generate image · uses API credits"}</Button>
     {image && <div className="space-y-3 border-t border-line pt-4">
       <Image src={image.url} alt={alt || "AI-generated illustration for your draft"} width={1024} height={1024} unoptimized className="h-auto w-full max-w-lg rounded-panel" />
-      <Button variant="secondary" size="sm" onClick={() => saveFile(image.blob, "careerai-publicist.png")}>Download image</Button>
+      <Button variant="secondary" size="sm" onClick={() => saveFile(image.blob, `careerai-publicist.${image.blob.type.split("/")[1] || "png"}`)}>Download image</Button>
       <p className="text-xs text-muted">Download before leaving or reloading. This image stays in this browser, not your saved drafts. Attach it manually when posting; the current LinkedIn publish button sends text only.</p>
     </div>}
   </section>;

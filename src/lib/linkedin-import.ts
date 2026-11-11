@@ -12,9 +12,9 @@ export function canonicalLinkedinJob(value: string): string {
   if (url.protocol !== "https:" || !["linkedin.com", "www.linkedin.com"].includes(url.hostname) || url.username || url.password || url.port || !match) throw new Error("Use an https://www.linkedin.com/jobs/view/... job link.");
   return `https://www.linkedin.com/jobs/view/${match[1]}/`;
 }
-export async function importLinkedinOpportunity(raw: z.input<typeof linkedinImportSchema>) {
+export async function importLinkedinOpportunity(raw: z.input<typeof linkedinImportSchema>, via = "User-supplied LinkedIn posting") {
   const input = linkedinImportSchema.parse(raw);
   const url = canonicalLinkedinJob(input.url);
-  const posting = foundPostingSchema.parse({ source: "LINKEDIN", externalId: `linkedin:${recordHash(url)}`, url, title: input.title, company: input.company, place: input.place, remote: input.remote ? true : null, description: input.text, complete: true, salary: input.salary, postedAt: null, via: "User-supplied LinkedIn posting" });
+  const posting = foundPostingSchema.parse({ source: "LINKEDIN", externalId: `linkedin:${recordHash(url)}`, url, title: input.title, company: input.company, place: input.place, remote: input.remote ? true : null, description: input.text, complete: true, salary: input.salary, postedAt: null, via });
   return savePosting(posting);
 }

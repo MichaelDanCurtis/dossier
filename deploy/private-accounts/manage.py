@@ -152,6 +152,22 @@ def compose_config(config):
             "cap_drop": ["ALL"], "security_opt": ["no-new-privileges:true"],
             "labels": {"traefik.enable": "false"},
         }
+        # Browser state has its own private volume and no published/CDP ports.
+        if config.get("linkedinBridge", False):
+            token = hashlib.sha256(("linkedin-bridge:" + user["appSecret"]).encode()).hexdigest()
+            bridge = f"bridge-{username}"
+            services[app]["environment"] = {"LINKEDIN_BRIDGE_URL": f"http://{bridge}:8090", "LINKEDIN_BRIDGE_TOKEN": token}
+            services[bridge] = {
+                "image": config.get("appImage", APP_IMAGE), "command": ["node", "deploy/linkedin-bridge/server.mjs"],
+                "restart": "unless-stopped", "init": True,
+                "environment": {"BRIDGE_TOKEN": token, "BRIDGE_DATA_DIR": "/data/linkedin"},
+                "volumes": [f"browser-{username}:/data"], "networks": [network],
+                "mem_limit": "768m", "cpus": 1, "shm_size": "256m",
+                "cap_drop": ["ALL"], "security_opt": ["no-new-privileges:true"],
+                "labels": {"traefik.enable": "false"},
+                "healthcheck": {"test": ["CMD", "node", "-e", "fetch('http://127.0.0.1:8090/status',{headers:{authorization:'Bearer '+process.env.BRIDGE_TOKEN}}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"], "interval": "30s", "timeout": "5s", "start_period": "15s", "retries": 3},
+            }
+            volumes[f"browser-{username}"] = {}
         volumes[f"pgdata-{username}"] = {}
         volumes[f"data-{username}"] = {}
     return {"name": config.get("projectName", "dossier"), "services": services, "networks": networks, "volumes": volumes}

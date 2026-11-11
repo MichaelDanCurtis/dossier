@@ -62,6 +62,8 @@ const schema = z.object({
         error: "DATABASE_URL must give the SQLite file's full path, e.g. file:/data/dossier.db.",
       }),
   ),
+  LINKEDIN_BRIDGE_URL: optional(z.url({ protocol: /^https?$/ })),
+  LINKEDIN_BRIDGE_TOKEN: optional(z.string().min(32)),
   DOSSIER_DATA_DIR: z
     .preprocess(unsetIfEmpty, z.string().default("/data"))
     .transform((dir) => path.resolve(dir)),
