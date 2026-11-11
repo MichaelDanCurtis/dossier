@@ -23,6 +23,7 @@ export const OPENAI_DECISIONS_KEY: SecretKind = { purpose: "openai-decisions-key
 export const GOOGLE_TOKEN: SecretKind = { purpose: "google-token-encryption", associatedData: "dossier google token v1" };
 /** The Google OAuth client's secret, entered in Settings → Google. */
 export const GOOGLE_CLIENT_SECRET: SecretKind = { purpose: "google-client-secret-encryption", associatedData: "dossier google client secret v1" };
+export const GITHUB_CONNECTION: SecretKind = { purpose: "github-encryption", associatedData: "careerai github connection v1" };
 
 const VERSION = "v1";
 const IV_BYTES = 12;

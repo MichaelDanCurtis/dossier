@@ -11,7 +11,9 @@ import "@/lib/career/jobs";
 import { queueCommittedJob, retryJob } from "@/lib/jobs/runner";
 import { opportunityInput } from "@/lib/career/opportunity-schema";
 import { createOpportunity, startInterviewPractice } from "@/lib/career/opportunities";
-import { createRepositorySession, listPublicRepositories, readPublicRepository, repositoryContextSchema, repositorySettingsSchema, saveRepositorySettings } from "@/lib/career/repositories";
+import { createRepositorySession, listPublicRepositories, readRepository, repositoryContextSchema, repositorySettingsSchema, saveRepositorySettings } from "@/lib/career/repositories";
+import { allowGithubRepository, disconnectGithub, listConnectedRepositories, removeGithubRepository, saveGithubConnection } from "@/lib/career/github";
+import { githubRepositoryName, githubTokenSchema } from "@/lib/career/github-schema";
 import { publicistConfig } from "@/lib/studio/publicist-provider";
 import { createProvider } from "@/lib/ai";
 
@@ -33,7 +35,12 @@ export const beginInterviewPractice = action(z.object({ briefingId: z.string().m
 export const discoverRepositories = action(z.object({ owner: z.string().max(39), page: z.number().int().min(1).max(50) }), async ({ owner, page }) => listPublicRepositories(owner, page));
 export const chooseRepositoryModel = action(repositorySettingsSchema, async (input) => { await saveRepositorySettings(input); revalidatePath("/career"); return { saved: true }; });
 export const repositoryModels = action(z.object({ connectionId: z.string().max(100) }), async ({ connectionId }) => createProvider(await publicistConfig(connectionId)).listModels(AbortSignal.timeout(15000)));
-export const inspectRepository = action(z.object({ name: z.string().max(150) }), async ({ name }) => readPublicRepository(name));
+export const inspectRepository = action(z.object({ name: githubRepositoryName, includeDocs: z.boolean().default(false) }), async ({ name, includeDocs }) => readRepository(name, includeDocs));
+export const connectPrivateGithub = action(z.object({ token: githubTokenSchema }), async ({ token }) => { const view = await saveGithubConnection(token); revalidatePath("/career"); return view; });
+export const disconnectPrivateGithub = action(z.object({}), async () => { const view = await disconnectGithub(); revalidatePath("/career"); return view; });
+export const connectedGithubRepositories = action(z.object({ page: z.number().int().min(1).max(50) }), async ({ page }) => listConnectedRepositories(page));
+export const allowPrivateGithubRepository = action(z.object({ name: githubRepositoryName }), async ({ name }) => { const view = await allowGithubRepository(name); revalidatePath("/career"); return view; });
+export const removePrivateGithubRepository = action(z.object({ name: githubRepositoryName }), async ({ name }) => { const view = await removeGithubRepository(name); revalidatePath("/career"); return view; });
 export const analyzeRepository = action(z.object({ context: repositoryContextSchema, approved: z.literal(true) }), async ({ context }) => {
   // The preview is user-editable input; it is always labelled source material,
   // never used as verified personal evidence or as executable instructions.

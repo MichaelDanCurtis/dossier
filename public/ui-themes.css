@@ -103,6 +103,234 @@
   --ui-sidebar-line: light-dark(#c2ceb7, #3d543e);
   --ui-sidebar-selected: light-dark(#c9d9bc, #344b34);
 }
+[data-ui-theme="ocean"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#eaf5f8, #081c24);
+  --ui-color-sidebar: light-dark(#0c3445, #061820);
+  --ui-color-surface: light-dark(#f4fbfd, #0c2833);
+  --ui-color-card: light-dark(#ffffff, #123542);
+  --ui-color-canvas: light-dark(#dceef3, #06151c);
+  --ui-color-input: light-dark(#ffffff, #09202a);
+  --ui-color-ink: light-dark(#123543, #e4f8fc);
+  --ui-color-muted: light-dark(#496673, #a4cbd5);
+  --ui-color-primary: light-dark(#00677a, #67d9e8);
+  --ui-color-primary-hover: light-dark(#005265, #95e8f1);
+  --ui-color-on-primary: light-dark(#ffffff, #08272f);
+  --ui-color-line: light-dark(#cadfe7, #365963);
+  --ui-color-line-input: light-dark(#648b9b, #79a8b8);
+  --ui-color-hover: light-dark(#dceff4, #1e4655);
+  --ui-color-selected: light-dark(#d0e9ef, #28596a);
+  --ui-color-track: light-dark(#b8d5df, #234654);
+  --ui-color-toggle-off: light-dark(#7295a4, #668d9c);
+  --ui-sidebar-ink: light-dark(#e8faff, #e8faff);
+  --ui-sidebar-muted: light-dark(#aed4df, #aed4df);
+  --ui-sidebar-line: light-dark(#386474, #294b59);
+  --ui-sidebar-selected: light-dark(#185b72, #28596a);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
+[data-ui-theme="forest"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#edf6ef, #0b1c14);
+  --ui-color-sidebar: light-dark(#12382c, #08170f);
+  --ui-color-surface: light-dark(#f7fcf8, #11281c);
+  --ui-color-card: light-dark(#ffffff, #183524);
+  --ui-color-canvas: light-dark(#deece2, #07140d);
+  --ui-color-input: light-dark(#ffffff, #0c2115);
+  --ui-color-ink: light-dark(#173c2b, #e8f7ec);
+  --ui-color-muted: light-dark(#506c5b, #abcbb5);
+  --ui-color-primary: light-dark(#20663f, #93ddb0);
+  --ui-color-primary-hover: light-dark(#164e30, #b7efca);
+  --ui-color-on-primary: light-dark(#ffffff, #0c2b18);
+  --ui-color-line: light-dark(#cbdfd0, #3c5c47);
+  --ui-color-line-input: light-dark(#688c74, #82ad90);
+  --ui-color-hover: light-dark(#e2efe5, #244d33);
+  --ui-color-selected: light-dark(#d3e8d9, #2e5d3e);
+  --ui-color-track: light-dark(#cee1d3, #294e35);
+  --ui-color-toggle-off: light-dark(#718d79, #739c7e);
+  --ui-sidebar-ink: light-dark(#e9fff2, #e9fff2);
+  --ui-sidebar-muted: light-dark(#b6d8c4, #b6d8c4);
+  --ui-sidebar-line: light-dark(#3a6650, #304f3a);
+  --ui-sidebar-selected: light-dark(#265c43, #2e5d3e);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
+[data-ui-theme="violet"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#f2eefa, #171024);
+  --ui-color-sidebar: light-dark(#292044, #100b1b);
+  --ui-color-surface: light-dark(#faf8ff, #21182f);
+  --ui-color-card: light-dark(#ffffff, #2c2140);
+  --ui-color-canvas: light-dark(#e7e0f1, #110b1b);
+  --ui-color-input: light-dark(#ffffff, #1a1126);
+  --ui-color-ink: light-dark(#302447, #f2eaff);
+  --ui-color-muted: light-dark(#6a5c7c, #c8b6df);
+  --ui-color-primary: light-dark(#6b3cb3, #c4a4ff);
+  --ui-color-primary-hover: light-dark(#542c94, #dbc7ff);
+  --ui-color-on-primary: light-dark(#ffffff, #241438);
+  --ui-color-line: light-dark(#ddd1eb, #544064);
+  --ui-color-line-input: light-dark(#9076aa, #ab90c5);
+  --ui-color-hover: light-dark(#eae3f5, #3c2e53);
+  --ui-color-selected: light-dark(#e1d5f2, #4e376c);
+  --ui-color-track: light-dark(#e4daf0, #3b2d50);
+  --ui-color-toggle-off: light-dark(#8f7da4, #8f76a6);
+  --ui-sidebar-ink: light-dark(#f5edff, #f5edff);
+  --ui-sidebar-muted: light-dark(#cbbce6, #cbbce6);
+  --ui-sidebar-line: light-dark(#534568, #463453);
+  --ui-sidebar-selected: light-dark(#51406f, #4e376c);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
+[data-ui-theme="rose"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#fbf0f2, #25121b);
+  --ui-color-sidebar: light-dark(#442230, #1c0d15);
+  --ui-color-surface: light-dark(#fff8fa, #331d29);
+  --ui-color-card: light-dark(#ffffff, #422636);
+  --ui-color-canvas: light-dark(#f4dfe6, #1c0c14);
+  --ui-color-input: light-dark(#ffffff, #2a1420);
+  --ui-color-ink: light-dark(#4d2333, #ffe9f1);
+  --ui-color-muted: light-dark(#805a6b, #dab3c3);
+  --ui-color-primary: light-dark(#a32c5a, #f5a4c5);
+  --ui-color-primary-hover: light-dark(#852047, #ffbed8);
+  --ui-color-on-primary: light-dark(#ffffff, #3c1226);
+  --ui-color-line: light-dark(#ead2dc, #684653);
+  --ui-color-line-input: light-dark(#ad7f91, #bf91a4);
+  --ui-color-hover: light-dark(#f9e4ec, #573248);
+  --ui-color-selected: light-dark(#f3d7e2, #6b3a52);
+  --ui-color-track: light-dark(#edd8e1, #533045);
+  --ui-color-toggle-off: light-dark(#a98293, #a77b8f);
+  --ui-sidebar-ink: light-dark(#fff0f6, #fff0f6);
+  --ui-sidebar-muted: light-dark(#e6becf, #e6becf);
+  --ui-sidebar-line: light-dark(#79485c, #613a4e);
+  --ui-sidebar-selected: light-dark(#74394f, #6b3a52);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
+[data-ui-theme="ember"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#fbf1e8, #23170f);
+  --ui-color-sidebar: light-dark(#452b20, #1a100b);
+  --ui-color-surface: light-dark(#fffaf4, #302116);
+  --ui-color-card: light-dark(#ffffff, #3d2c1f);
+  --ui-color-canvas: light-dark(#efdfcc, #1a1009);
+  --ui-color-input: light-dark(#ffffff, #281a10);
+  --ui-color-ink: light-dark(#4a2b1c, #fff0df);
+  --ui-color-muted: light-dark(#7f6251, #d6bc9e);
+  --ui-color-primary: light-dark(#9e431b, #f4bb80);
+  --ui-color-primary-hover: light-dark(#803210, #ffd6a6);
+  --ui-color-on-primary: light-dark(#ffffff, #361e09);
+  --ui-color-line: light-dark(#ead6c4, #634c39);
+  --ui-color-line-input: light-dark(#a7876a, #b99a7a);
+  --ui-color-hover: light-dark(#f6e7d6, #533a25);
+  --ui-color-selected: light-dark(#f2dfc9, #63462b);
+  --ui-color-track: light-dark(#e8d5be, #4f3723);
+  --ui-color-toggle-off: light-dark(#a68a70, #a88a6a);
+  --ui-sidebar-ink: light-dark(#fff1df, #fff1df);
+  --ui-sidebar-muted: light-dark(#e3c6a8, #e3c6a8);
+  --ui-sidebar-line: light-dark(#76523a, #61462f);
+  --ui-sidebar-selected: light-dark(#754529, #63462b);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
+[data-ui-theme="graphite"] {
+  --ui-font-body: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-font-heading: var(--typeface-geist, Geist, Arial, sans-serif);
+  --ui-heading-weight: 600;
+  --ui-radius-control: 8px;
+  --ui-radius-card: 14px;
+  --ui-radius-panel: 14px;
+  --ui-color-paper: light-dark(#f1f3f5, #111418);
+  --ui-color-sidebar: light-dark(#24282e, #0b0e12);
+  --ui-color-surface: light-dark(#fafbfc, #1a1e24);
+  --ui-color-card: light-dark(#ffffff, #232931);
+  --ui-color-canvas: light-dark(#e2e6eb, #0b0e12);
+  --ui-color-input: light-dark(#ffffff, #14191f);
+  --ui-color-ink: light-dark(#252b33, #f0f3f7);
+  --ui-color-muted: light-dark(#5d6672, #b4becb);
+  --ui-color-primary: light-dark(#39424f, #c9d4e2);
+  --ui-color-primary-hover: light-dark(#242c36, #e4ebf5);
+  --ui-color-on-primary: light-dark(#ffffff, #17202c);
+  --ui-color-line: light-dark(#d5dbe3, #48515e);
+  --ui-color-line-input: light-dark(#7b8796, #98a4b6);
+  --ui-color-hover: light-dark(#e8ecf1, #313a46);
+  --ui-color-selected: light-dark(#dce3eb, #414e60);
+  --ui-color-track: light-dark(#dfe5ec, #303a48);
+  --ui-color-toggle-off: light-dark(#7b8796, #7f8da1);
+  --ui-sidebar-ink: light-dark(#f1f5fa, #f1f5fa);
+  --ui-sidebar-muted: light-dark(#c2cbd8, #c2cbd8);
+  --ui-sidebar-line: light-dark(#4a535f, #38434f);
+  --ui-sidebar-selected: light-dark(#485566, #414e60);
+  --ui-color-document: var(--ui-color-ink);
+  --ui-color-faint: var(--ui-color-muted);
+  --ui-color-primary-text: var(--ui-color-primary);
+  --ui-color-focus: var(--ui-color-primary);
+  --ui-color-line-card: var(--ui-color-line);
+  --ui-color-line-field: var(--ui-color-line-input);
+  --ui-color-line-control: var(--ui-color-line-input);
+  --ui-color-line-strong: var(--ui-color-line-input);
+  --ui-color-line-popover: var(--ui-color-line-input);
+}
 :root, [data-ui-theme] {
   --color-paper: var(--ui-color-paper);
   --color-sidebar: var(--ui-color-sidebar);
@@ -164,6 +392,10 @@
 :root { color-scheme: light dark; }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
+/* CSS declarations also scope the build tool's light-dark() fallback. Inline
+   colorScheme alone cannot override its inherited fallback variables. */
+[data-preview-mode="light"] { color-scheme: light; }
+[data-preview-mode="dark"] { color-scheme: dark; }
 .app-sidebar {
   --color-surface: var(--color-sidebar);
   --color-ink: var(--ui-sidebar-ink);

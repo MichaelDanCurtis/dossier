@@ -7,13 +7,23 @@ export const COLOR_SCHEME_COOKIE = "dossier_theme";
 export const APP_THEME_COOKIE = "dossier_ui_theme";
 export const SIDEBAR_COOKIE = "dossier_sidebar";
 
-export const APP_THEMES = ["studio", "editorial"] as const;
+export const APP_THEMES = ["studio", "editorial", "ocean", "forest", "violet", "rose", "ember", "graphite"] as const;
 export type AppTheme = (typeof APP_THEMES)[number];
+export const APP_THEME_DETAILS: Record<AppTheme, { name: string; description: string }> = {
+  studio: { name: "Studio", description: "Cobalt blue and cool slate. Clean, familiar and focused." },
+  editorial: { name: "Editorial", description: "Olive green, warm ivory and expressive serif headings." },
+  ocean: { name: "Ocean", description: "Deep teal, sea glass and airy cyan surfaces." },
+  forest: { name: "Forest", description: "Emerald, fresh mint and woodland greens." },
+  violet: { name: "Violet", description: "Amethyst accents with soft lavender and plum." },
+  rose: { name: "Rose", description: "Raspberry, blush and rich rosewood." },
+  ember: { name: "Ember", description: "Burnt orange, warm sand and glowing copper." },
+  graphite: { name: "Graphite", description: "Quiet charcoal, silver and neutral grays." },
+};
 export type Appearance = { theme: AppTheme; scheme?: ColorScheme };
 
 /** Unknown and older browsers start in Studio. Document themes are unrelated. */
 export function parseAppTheme(value: string | undefined): AppTheme {
-  return value === "editorial" ? value : "studio";
+  return APP_THEMES.includes(value as AppTheme) ? value as AppTheme : "studio";
 }
 
 export type ColorScheme = "light" | "dark";

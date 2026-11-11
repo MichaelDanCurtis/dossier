@@ -143,7 +143,8 @@ export function createGateway({ registryPath, origin, now = Date.now, maxFailure
       if (url.origin !== publicUrl.origin) return reply(response, 400, 'Invalid request', 'text/plain');
       const preference = parseCookies(request.headers.cookie).get('dossier_theme');
       response.dossierTheme = ['light', 'dark'].includes(preference) ? preference : undefined;
-      response.dossierUiTheme = parseCookies(request.headers.cookie).get('dossier_ui_theme') === 'editorial' ? 'editorial' : 'studio';
+      const chosenTheme = parseCookies(request.headers.cookie).get('dossier_ui_theme');
+      response.dossierUiTheme = ['studio', 'editorial', 'ocean', 'forest', 'violet', 'rose', 'ember', 'graphite'].includes(chosenTheme) ? chosenTheme : 'studio';
       const config = await registry();
       if (url.pathname === '/_accounts/health' && request.method === 'GET') return reply(response, 200, '{"status":"ok"}', 'application/json');
       if (publicUrl.protocol === 'https:' && request.headers['x-forwarded-proto'] !== 'https') return reply(response, 400, 'HTTPS required', 'text/plain');

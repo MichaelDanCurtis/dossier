@@ -4,15 +4,10 @@ import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
-import { APP_THEMES, browserAppearance, previewAppearance, saveAppearance, type Appearance, type ColorScheme } from "@/lib/ui-preferences";
+import { APP_THEMES, APP_THEME_DETAILS as THEMES, browserAppearance, previewAppearance, saveAppearance, type Appearance, type ColorScheme } from "@/lib/ui-preferences";
 
 import { SettingsSectionIntro } from "./settings-screen";
 import styles from "./appearance-section.module.css";
-
-const THEMES = {
-  studio: { name: "Studio", description: "Cool blues, clean sans-serif type and rounded panels." },
-  editorial: { name: "Editorial", description: "Forest green, warm ivory and expressive serif headings." },
-};
 
 /** Preview the real UI; only Apply writes browser preferences. Never touches a document theme. */
 export function AppearanceSection({ initial }: { initial: Appearance }) {
@@ -56,26 +51,8 @@ export function AppearanceSection({ initial }: { initial: Appearance }) {
   return (
     <>
       <SettingsSectionIntro title="Appearance">
-        Preview a theme before applying it. Your choice follows you to sign-in and user management on this browser. Resume document themes are separate.
+        Eight color palettes, each with light and dark modes. Preview the app before applying a choice. Sign-in and user management use the same palette; resume document themes are separate.
       </SettingsSectionIntro>
-      <fieldset>
-        <legend className="mb-3 text-sm font-medium">App theme</legend>
-        <div className="grid gap-4 min-[620px]:grid-cols-2">
-          {APP_THEMES.map((theme) => (
-            <label key={theme} className="relative min-w-0 cursor-pointer">
-              <input className="peer sr-only" type="radio" name="app-theme" value={theme} checked={chosen.theme === theme} onChange={() => preview({ ...chosen, theme })} />
-              <span className="flex h-full flex-col gap-3 rounded-panel border border-line-input bg-card p-4 peer-checked:border-primary-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-focus">
-                <span data-ui-theme={theme} className={styles.preview} aria-hidden="true">
-                  <span className={styles.sidebar}><span>D</span><i /><i /><i /></span>
-                  <span className={styles.page}><b>Settings</b><span className={styles.miniCard}><b>Aa</b><i /><i /></span><span className={styles.miniAction}>Continue</span></span>
-                </span>
-                <span className="flex items-center justify-between gap-2 font-medium">{THEMES[theme].name}{theme === "studio" && <span className="ml-auto text-xs text-muted">Default</span>}{chosen.theme === theme && <Check size={16} aria-label="Selected" className="shrink-0 text-primary-text" />}</span>
-                <span className="text-sm text-muted">{THEMES[theme].description}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
       <fieldset className="rounded-panel border border-line-card bg-card p-5">
         <legend className="px-1 text-sm font-medium">Color mode</legend>
         <div className="flex flex-wrap gap-x-6 gap-y-3">
@@ -87,7 +64,27 @@ export function AppearanceSection({ initial }: { initial: Appearance }) {
           ))}
         </div>
       </fieldset>
-      <div className="flex flex-wrap items-center gap-3">
+      <fieldset>
+        <legend className="mb-3 text-sm font-medium">App theme</legend>
+        <div className="grid gap-4 min-[620px]:grid-cols-2 min-[1400px]:grid-cols-3">
+          {APP_THEMES.map((theme) => (
+            <label key={theme} className="relative min-w-0 cursor-pointer">
+              <input className="peer sr-only" type="radio" name="app-theme" value={theme} checked={chosen.theme === theme} onChange={() => preview({ ...chosen, theme })} />
+              <span className="flex h-full flex-col gap-3 rounded-panel border border-line-input bg-card p-4 peer-checked:border-primary-text peer-focus-visible:outline-2 peer-focus-visible:outline-offset-4 peer-focus-visible:outline-focus">
+                <span className="grid grid-cols-2 gap-2" aria-hidden="true">
+                  {(["light", "dark"] as const).map((mode) => <span key={mode} className="space-y-1"><span className="block text-xs text-muted">{mode === "light" ? "Light" : "Dark"}</span><span data-ui-theme={theme} data-preview-mode={mode} className={styles.preview}>
+                    <span className={styles.sidebar}><span>C</span><i /><i /><i /></span>
+                    <span className={styles.page}><b>Career</b><span className={styles.miniCard}><b>Aa</b><i /><i /></span><span className={styles.miniAction}>Continue</span></span>
+                  </span></span>)}
+                </span>
+                <span className="flex items-center justify-between gap-2 font-medium">{THEMES[theme].name}{theme === "studio" && <span className="ml-auto text-xs text-muted">Default</span>}{chosen.theme === theme && <Check size={16} aria-label="Selected" className="shrink-0 text-primary-text" />}</span>
+                <span className="text-sm text-muted">{THEMES[theme].description}</span>
+              </span>
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <div className="sticky bottom-0 z-10 flex flex-wrap items-center gap-3 border-t border-line bg-paper py-4">
         <Button onClick={apply} disabled={!changed}>Apply appearance</Button>
         <Button variant="secondary" onClick={cancel} disabled={!changed}>Cancel preview</Button>
       </div>

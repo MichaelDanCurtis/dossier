@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { browserAppearance } from "@/lib/ui-preferences";
+import { APP_THEMES, APP_THEME_DETAILS, browserAppearance } from "@/lib/ui-preferences";
 
 import { ThemeToggle } from "../theme-toggle";
 
@@ -17,6 +17,18 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("app appearance", () => {
+  it.each(APP_THEMES)("remembers %s in both light and dark modes", async (theme) => {
+    const view = render(<AppearanceSection initial={{ theme: "studio" }} />);
+    await userEvent.click(screen.getByRole("radio", { name: new RegExp(APP_THEME_DETAILS[theme].name) }));
+    for (const mode of ["Dark", "Light"] as const) {
+      await userEvent.click(screen.getByRole("radio", { name: mode }));
+      await userEvent.click(screen.getByRole("button", { name: "Apply appearance" }));
+      expect(browserAppearance()).toEqual({ theme, scheme: mode.toLowerCase() });
+      expect(document.documentElement.dataset.uiTheme).toBe(theme);
+      expect(document.documentElement.dataset.theme).toBe(mode.toLowerCase());
+    }
+    view.unmount();
+  });
   it("previews without writing cookies and cancels to the committed theme", async () => {
     render(<AppearanceSection initial={{ theme: "studio" }} />);
     await userEvent.click(screen.getByRole("radio", { name: /Editorial/ }));

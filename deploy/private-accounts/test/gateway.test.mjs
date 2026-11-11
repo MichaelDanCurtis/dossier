@@ -228,7 +228,7 @@ test('account pages paint Studio by default and honor both appearance cookies be
   const f = await fixture(t);
   const initial = await (await f.request('/login')).text();
   assert.match(initial, /<html lang="en" data-ui-theme="studio">/);
-  for (const theme of ['studio', 'editorial']) for (const mode of ['light', 'dark']) {
+  for (const theme of ['studio', 'editorial', 'ocean', 'forest', 'violet', 'rose', 'ember', 'graphite']) for (const mode of ['light', 'dark']) {
     const html = await (await f.request('/login', { headers: { cookie: `dossier_ui_theme=${theme}; dossier_theme=${mode}` } })).text();
     assert.ok(html.includes(`<html lang="en" data-ui-theme="${theme}" data-theme="${mode}">`));
     assert.ok(html.includes('--ui-color-sidebar: light-dark(#101c34, #0a1427)'));
