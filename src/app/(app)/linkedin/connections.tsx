@@ -35,6 +35,20 @@ export function LinkedinConnections({ view, sources, applications, redirectUri, 
       <h2 className="font-medium">LinkedIn publishing</h2>
       {notice && <p role="status" className="text-sm">{notice}</p>}
       <p className="text-sm text-muted">{view.connected ? `Connected as ${view.name} · access expires ${new Date(view.expiresAt!).toISOString().slice(0, 10)}.` : "Connect a LinkedIn developer app to publish reviewed text posts. This connection does not read your feed or inbox."}</p>
+      <details className="rounded-control border border-line p-3 text-sm">
+        <summary className="cursor-pointer font-medium">Why isn’t my normal LinkedIn login enough?</summary>
+        <div className="mt-3 space-y-3 text-muted">
+          <p>Your login lets you use LinkedIn’s website. OAuth is LinkedIn giving CareerAI a separate, revocable permission token. You still sign in on LinkedIn itself; CareerAI does not need your LinkedIn password.</p>
+          <p>The person hosting CareerAI configures a developer app. Its Client ID identifies the app, and its Client secret authenticates the app—not you. Each person then connects their own LinkedIn account and approves the requested permissions.</p>
+          <p>This connection requests account identity and permission to publish a post you approve. Those permissions do not include your home feed, personal inbox or general job search. Creating the developer app does not unlock those capabilities.</p>
+          <p>A browser-based MCP can technically read pages in a signed-in browser. That uses a browser session rather than OAuth, depends on the website’s layout and session lifetime, and can encounter account checks. LinkedIn says it prohibits scraping and automated activity. CareerAI has not connected your browser cookies to an unattended scraper.</p>
+          <p>For now, jobs, feed excerpts and messages are imports. An approved connector with verified read access can be added separately.</p>
+          <div className="flex flex-wrap gap-3">
+            <a className="underline" href="https://learn.microsoft.com/en-us/linkedin/shared/authentication/getting-access" target="_blank" rel="noreferrer">LinkedIn API permissions ↗</a>
+            <a className="underline" href="https://www.linkedin.com/help/linkedin/answer/a1341543" target="_blank" rel="noreferrer">LinkedIn’s automation policy ↗</a>
+          </div>
+        </div>
+      </details>
       <div className="flex flex-wrap gap-2">
         {view.configured && !view.connected && <a href="/api/linkedin/connect" className={buttonClassName("primary", "sm")}>Connect LinkedIn</a>}
         {view.connected && <Button size="sm" variant="secondary" disabled={busy} onClick={() => start(async () => { const r = toastResult(await disconnectLinkedin({})); if (r.ok) router.refresh(); })}>Disconnect here</Button>}
@@ -42,7 +56,13 @@ export function LinkedinConnections({ view, sources, applications, redirectUri, 
       </div>
       <details className="text-sm">
         <summary className="cursor-pointer font-medium">Developer app setup</summary>
-        <p className="my-2 text-muted">In your <a href="https://www.linkedin.com/developers/apps" className="underline" target="_blank" rel="noreferrer">LinkedIn developer app</a>, enable Sign In with LinkedIn using OpenID Connect and Share on LinkedIn. Add this authorized redirect URL:</p>
+        <ol className="my-3 list-inside list-decimal space-y-2 text-muted">
+          <li>The host creates or selects an app in <a href="https://www.linkedin.com/developers/apps" className="underline" target="_blank" rel="noreferrer">LinkedIn Developer Apps ↗</a>, completing LinkedIn’s required app details.</li>
+          <li>Under Products, enable <strong>Sign In with LinkedIn using OpenID Connect</strong> and <strong>Share on LinkedIn</strong>.</li>
+          <li>Under Auth, add the exact authorized redirect URL below, including HTTPS, domain and path.</li>
+          <li>Copy that app’s Client ID and Client secret into these fields and save. These are app credentials, not your LinkedIn email and password.</li>
+          <li>Press Connect LinkedIn, sign in on LinkedIn and review the consent screen. You can revoke the connection in LinkedIn settings.</li>
+        </ol>
         <code className="block break-all rounded-control border border-line p-2 text-xs">{redirectUri}</code>
         <form className="mt-3 grid gap-3 sm:grid-cols-2" onSubmit={(e) => { e.preventDefault(); start(async () => {
           const r = toastResult(await configureLinkedin({ clientId, clientSecret }));

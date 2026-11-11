@@ -12,9 +12,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { saveFile } from "@/lib/save-file";
 import type { PublicistDraft, Studio } from "@/lib/studio/schema";
 
-import { createPublicistDraft, editPublicistDraft, publishPublicistPost, refreshStudioNews, removePublicistDraft, saveNewsWatch } from "./studio-actions";
+import { createPublicistDraft, editPublicistDraft, publishPublicistPost, refreshStudioNews, removePublicistDraft } from "./studio-actions";
 
-const feeds = { aws: "AWS News", cncf: "CNCF", microsoft: "Microsoft Security" } as const;
+import { PublicistModelSettings, PublicistNewsSettings, type PublicistConnections } from "./publicist-settings";
+import { PublicistWorkshop } from "./publicist-workshop";
+import { PublicistImages } from "./publicist-images";
 
 type Account = { id: string; name: string } | null;
 
@@ -68,14 +70,14 @@ function DraftCard({ draft, account }: { draft: PublicistDraft; account: Account
   </article>;
 }
 
-export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "drafts" | "newsAuto" | "newsFeeds" | "sources">; account: Account }) {
+export function PublicistAgent({ studio, account, connections }: { studio: Pick<Studio, "drafts" | "newsAuto" | "newsFeeds" | "customNewsFeeds" | "publicist" | "publicistChat" | "sources">; account: Account; connections: PublicistConnections }) {
   const router = useRouter();
   const [busy, start] = useTransition();
   const [panel, setPanel] = useState("draft");
   const [format, setFormat] = useState<"POST" | "ARTICLE">("POST");
   const [topic, setTopic] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
-  const [feedKeys, setFeedKeys] = useState<(keyof typeof feeds)[]>(studio.newsFeeds);
+  const [draftOpen, setDraftOpen] = useState(false);
   const sources = studio.sources.filter((source) => source.kind !== "MESSAGE");
   return <>
     <PageHeader title="Publicist agent" description="Turn your work and selected industry sources into posts and articles you can review, edit and publish." />
@@ -84,21 +86,17 @@ export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "draf
         <TabsTrigger value="draft">Write</TabsTrigger>
         <TabsTrigger value="sources">Sources</TabsTrigger>
         <TabsTrigger value="saved">Saved drafts ({studio.drafts.length})</TabsTrigger>
+        <TabsTrigger value="images">Images</TabsTrigger>
+        <TabsTrigger value="settings">Settings</TabsTrigger>
       </TabsList>
       <TabsContent value="sources" forceMount className="space-y-5 data-[state=inactive]:hidden">
+      <PublicistNewsSettings studio={studio} />
       <section className="space-y-3 rounded-panel border border-line-card bg-card p-5">
-        <h2 className="font-medium">Industry sources</h2>
-        <p className="text-sm text-muted">Refresh publisher feeds on demand or <Link className="underline" href="/linkedin?section=feed">add a LinkedIn post or article</Link>. Private recruiter messages and salary are excluded.</p>
+        <h2 className="font-medium">Choose context for our conversation</h2>
+        <p className="text-sm text-muted">Save news preferences above, refresh your selected feeds, then choose up to six excerpts. You can also <Link className="underline" href="/linkedin?section=feed">add a post or source</Link>. Private recruiter messages are excluded.</p>
         <div className="flex flex-wrap items-center gap-3 text-sm">
-          {Object.entries(feeds).map(([id, name]) => <label key={id} className="flex gap-1.5"><input type="checkbox" checked={feedKeys.includes(id as keyof typeof feeds)} onChange={(e) => setFeedKeys(e.target.checked ? [...feedKeys, id as keyof typeof feeds] : feedKeys.filter((key) => key !== id))} /> {name}</label>)}
-          <Button variant="secondary" size="sm" disabled={busy || !feedKeys.length} onClick={() => start(async () => { const r = toastResult(await refreshStudioNews({ feeds: feedKeys })); if (r.ok) { if (r.data.errors.length) toast(`Could not refresh: ${r.data.errors.join(", ")}`); router.refresh(); } })}>Refresh industry news</Button>
-        </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
-          <Button variant="secondary" size="sm" disabled={busy || !feedKeys.length} onClick={() => start(async () => {
-            const r = toastResult(await saveNewsWatch({ enabled: !studio.newsAuto, feeds: feedKeys }));
-            if (r.ok) router.refresh();
-          })}>{studio.newsAuto ? "Pause daily news checks" : "Enable daily news checks"}</Button>
-          {studio.newsAuto ? `Daily checks on: ${studio.newsFeeds.map((key) => feeds[key]).join(", ")}.` : "Daily checks off."} Checks collect sources only.
+          <Button variant="secondary" size="sm" disabled={busy || !studio.newsFeeds.length} onClick={() => start(async () => { const r = toastResult(await refreshStudioNews({ feeds: studio.newsFeeds })); if (r.ok) { if (r.data.errors.length) toast(`Could not refresh: ${r.data.errors.join(", ")}`); else toast("News refreshed with your saved topic filters."); router.refresh(); } })}>Refresh industry news</Button>
+          <span className="text-xs text-muted">{studio.newsAuto ? "Daily collection on." : "Daily collection off."} Sources are collected without writing or posting.</span>
         </div>
         {!sources.length && <p className="text-sm text-muted">No sources saved. You can also draft directly from your own brief.</p>}
         <div className="max-h-80 space-y-2 overflow-y-auto">
@@ -111,22 +109,28 @@ export function PublicistAgent({ studio, account }: { studio: Pick<Studio, "draf
         </div>
       </section>
       </TabsContent>
-      <TabsContent value="draft" forceMount className="max-w-[960px] data-[state=inactive]:hidden">
-      <form className="space-y-3 rounded-panel border border-line-card bg-card p-5" onSubmit={(e) => { e.preventDefault(); start(async () => {
+      <TabsContent value="draft" forceMount className="max-w-[960px] space-y-5 data-[state=inactive]:hidden">
+      <PublicistWorkshop initial={studio.publicistChat} sourceIds={selected.filter((id) => sources.some((source) => source.id === id))} onChoose={(brief) => { setTopic(brief); setDraftOpen(true); }} />
+      <details open={draftOpen} onToggle={(event) => setDraftOpen(event.currentTarget.open)} className="rounded-panel border border-line-card bg-card p-5">
+      <summary className="cursor-pointer font-medium">Ready to draft? Choose an angle or write a brief.</summary>
+      <form className="mt-4 space-y-3" onSubmit={(e) => { e.preventDefault(); start(async () => {
         const r = toastResult(await createPublicistDraft({ format, topic, sourceIds: selected.filter((id) => sources.some((s) => s.id === id)) }));
         if (r.ok) { setTopic(""); setPanel("saved"); router.refresh(); }
       }); }}>
-        <h2 className="font-medium">Draft something</h2>
+        <h2 className="font-medium">Turn an idea into a draft</h2>
         <label className="flex flex-wrap items-center gap-2 text-sm">Format<select aria-label="Format" className="rounded-control border border-line-input bg-input px-3 py-2" value={format} onChange={(e) => setFormat(e.target.value === "ARTICLE" ? "ARTICLE" : "POST")}><option value="POST">LinkedIn post</option><option value="ARTICLE">Article</option></select></label>
         <Textarea label="Your brief" rows={4} value={topic} maxLength={4000} placeholder="What did you build, learn or notice? Include what you can share publicly and the audience you want to reach." onChange={(e) => setTopic(e.target.value)} />
         <p className="text-xs text-muted">Choose optional excerpts in the Sources tab. Only your brief and selected source excerpts go to your AI provider. Drafts stay here until you publish or copy them.</p>
         <Button type="submit" disabled={busy || topic.trim().length < 5}>{busy ? "Working…" : "Generate draft"}</Button>
       </form>
+      </details>
       </TabsContent>
       <TabsContent value="saved" forceMount className="max-w-[960px] space-y-5 data-[state=inactive]:hidden">
         {!studio.drafts.length && <p className="rounded-panel border border-dashed border-line-card p-6 text-sm text-muted">No drafts yet. Open Write to create a post or article.</p>}
         {studio.drafts.map((draft) => <DraftCard key={draft.id} draft={draft} account={account} />)}
       </TabsContent>
+      <TabsContent value="images" forceMount className="data-[state=inactive]:hidden"><PublicistImages preferences={studio.publicist} visual={studio.publicistChat.visual} /></TabsContent>
+      <TabsContent value="settings" forceMount className="data-[state=inactive]:hidden"><PublicistModelSettings preferences={studio.publicist} connections={connections} /></TabsContent>
     </Tabs>
   </>;
 }

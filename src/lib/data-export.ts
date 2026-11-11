@@ -527,7 +527,14 @@ export async function buildExport(
         facts,
       },
       themes,
-      settings: settings.filter((setting) => setting.key !== "agentQuery" && !SECRET_SETTINGS.includes(setting.key) && !INSTALL_SETTINGS.includes(setting.key)),
+      settings: settings.filter((setting) => setting.key !== "agentQuery" && !SECRET_SETTINGS.includes(setting.key) && !INSTALL_SETTINGS.includes(setting.key)).map((setting) => {
+        if (setting.key !== "careerStudio") return setting;
+        try {
+          const studio = JSON.parse(setting.value);
+          if (studio.publicistChat?.pending) delete studio.publicistChat.pending;
+          return { ...setting, value: JSON.stringify(studio) };
+        } catch { return setting; }
+      }),
       ...(apiKey ? { apiKey } : {}),
       ...(Object.keys(jobSourceKeys).length > 0 ? { jobSourceKeys } : {}),
       applications,

@@ -202,3 +202,28 @@ dynamic registration and requires per-account consent with PKCE; it does not use
 the native single-user callback allowlist. Review the requested client and return
 address before granting access. Browser OAuth and bearer-token controls share one
 Settings page in this deployment mode.
+
+### Publicist workshop additions
+
+Publicist stores the writing preferences and conversation you choose to save,
+including audience, public expertise, voice, selected text model/effort, story
+angles and visual briefs. Brainstorming and drafting send that context and the
+selected source excerpts to the configured Publicist provider. Saved AI
+connections keep their own encrypted keys; choosing a Publicist model does not
+change the app default or expose the key to the browser. Active generation leases
+are omitted from exports.
+
+You can configure industries, keyword filters and exclusions, select publisher
+feeds, and add public HTTPS RSS/Atom URLs. Optional industry search sends the
+saved industry/topic query to Google News RSS. Public publisher requests do not
+include profile fields, private messages, pay, cookies or AI credentials. Daily
+collection remains an explicit choice and does not generate or publish content.
+
+Image generation sends the reviewed image prompt and a privacy-preserving
+installation identifier to OpenAI using a separately selected saved OpenAI
+connection. It makes one request only after Generate image is pressed; it may
+incur image API charges. Generated PNGs are held in the current browser until
+downloaded and are not included in saved drafts or server backups. Stock-image
+search links open the selected search query on the external image site. CareerAI
+does not automatically retrieve or license those images. LinkedIn publishing
+continues to send approved text only.

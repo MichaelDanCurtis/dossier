@@ -38,18 +38,65 @@ export const publicistDraft = z.object({
   postUrn: z.string().max(300).optional(),
   sources: z.array(z.object({ title: z.string().max(200), url: z.union([z.literal(""), httpsLink]), date: z.iso.datetime() })).max(6),
 });
+export const publicistPreferences = z.object({
+  industry: z.string().trim().max(200).default(""),
+  topics: z.array(z.string().trim().min(1).max(100)).max(12).default([]),
+  exclude: z.array(z.string().trim().min(1).max(100)).max(12).default([]),
+  audience: z.string().trim().max(500).default(""),
+  voice: z.string().trim().max(2000).default(""),
+  expertise: z.string().trim().max(3000).default(""),
+  connectionId: z.string().max(100).default(""),
+  model: z.string().trim().max(200).default(""),
+  effort: z.enum(["default", "low", "medium", "high"]).default("default"),
+  imageConnectionId: z.string().max(100).default(""),
+  imageModel: z.string().trim().max(200).default(""),
+});
+// Defaults belong on stored preferences, not on partial edits: otherwise
+// changing voice could reset the separately saved industry and feed filters.
+export const publicistPreferencePatch = z.object({
+  industry: publicistPreferences.shape.industry.removeDefault().optional(),
+  topics: publicistPreferences.shape.topics.removeDefault().optional(),
+  exclude: publicistPreferences.shape.exclude.removeDefault().optional(),
+  audience: publicistPreferences.shape.audience.removeDefault().optional(),
+  voice: publicistPreferences.shape.voice.removeDefault().optional(),
+  expertise: publicistPreferences.shape.expertise.removeDefault().optional(),
+  connectionId: publicistPreferences.shape.connectionId.removeDefault().optional(),
+  model: publicistPreferences.shape.model.removeDefault().optional(),
+  effort: publicistPreferences.shape.effort.removeDefault().optional(),
+  imageConnectionId: publicistPreferences.shape.imageConnectionId.removeDefault().optional(),
+  imageModel: publicistPreferences.shape.imageModel.removeDefault().optional(),
+});
+export const customNewsFeed = z.object({ id: z.string().max(100), name: z.string().trim().min(1).max(100), url: httpsLink });
+export const publicistTurn = z.object({
+  id: z.string().max(100), role: z.enum(["user", "assistant"]), text: z.string().max(6000),
+});
+export const publicistAnswer = z.object({
+  reply: z.string(),
+  ideas: z.array(z.object({ title: z.string(), angle: z.string(), question: z.string() })),
+  visual: z.object({ prompt: z.string(), altText: z.string(), photoQuery: z.string() }),
+});
 export const studioSchema = z.object({
   watch: careerWatchSchema.default(defaultCareerWatch),
   sources: z.array(studioSource).max(80).default([]),
   drafts: z.array(publicistDraft).max(30).default([]),
   newsAuto: z.boolean().default(false),
-  newsFeeds: z.array(z.enum(["aws", "cncf", "microsoft"])).max(3).default(["aws", "cncf", "microsoft"]),
+  newsFeeds: z.array(z.string().max(100)).max(10).default(["aws", "cncf", "microsoft"]),
+  customNewsFeeds: z.array(customNewsFeed).max(10).default([]),
+  publicist: publicistPreferences.default(() => publicistPreferences.parse({})),
+  publicistChat: z.object({
+    revision: z.number().int().nonnegative().default(0),
+    messages: z.array(publicistTurn).max(30).default([]),
+    ideas: z.array(z.object({ title: z.string().max(200), angle: z.string().max(1500), question: z.string().max(500) })).max(3).default([]),
+    visual: z.object({ prompt: z.string().max(4000), altText: z.string().max(500), photoQuery: z.string().max(200) }).optional(),
+    pending: z.object({ id: z.string(), at: z.number() }).optional(),
+  }).default({ revision: 0, messages: [], ideas: [] }),
   lastNewsCheck: z.iso.datetime().optional(),
 });
 export type Studio = z.infer<typeof studioSchema>;
 export type StudioSource = z.infer<typeof studioSource>;
 export type PublicistDraft = z.infer<typeof publicistDraft>;
 export type CareerWatch = z.infer<typeof careerWatchSchema>;
+export type PublicistPreferences = z.infer<typeof publicistPreferences>;
 
 export function normalRole(text: string) {
   return text.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();

@@ -9,7 +9,8 @@ vi.mock("@/lib/auth/session", () => ({ getSession: async () => ({ userId: "fixtu
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 vi.mock("next/navigation", () => ({ unstable_rethrow: vi.fn() }));
 vi.mock("@/lib/ai", () => ({ AiError: class AiError extends Error {}, getAiProvider: async () => ({ complete: fixture.complete }) }));
-import { addStudioSource, createPublicistDraft, publishPublicistPost } from "@/app/(app)/agent/studio-actions";
+import { addStudioSource, createPublicistDraft, publishPublicistPost, addPublicistFeed, savePublicistNews, savePublicistPreferences, resetPublicistConversation } from "@/app/(app)/agent/studio-actions";
+import { publicistConversation } from "./publicist-conversation";
 import { loadStudio, updateStudio } from "./data";
 import { beginLinkedin, completeLinkedin, forgetLinkedinConnection, linkedinConnectionView, setLinkedinApp } from "./linkedin";
 import { linkedinKeys, studioKey } from "./schema";
@@ -35,6 +36,42 @@ async function draft() {
 }
 
 describe("private agent studio and LinkedIn publishing", () => {
+  it("saves industry/feed choices separately from model/voice preferences", async () => {
+    const feed = await addPublicistFeed({ name: "Healthcare", url: "https://example.com/health/feed" });
+    expect(feed.ok).toBe(true); if (!feed.ok) return;
+    expect((await addPublicistFeed({ name: "Private", url: "https://127.0.0.1/feed" })).ok).toBe(false);
+    expect((await savePublicistNews({ industry: "Healthcare", topics: ["clinical research"], exclude: ["crypto"], feeds: [feed.data.id], enabled: false })).ok).toBe(true);
+    expect((await savePublicistPreferences({ voice: "Practical and concise", audience: "Clinical researchers" })).ok).toBe(true);
+    const studio = await loadStudio();
+    expect(studio.newsFeeds).toEqual([feed.data.id]);
+    expect(studio.publicist).toMatchObject({ industry: "Healthcare", topics: ["clinical research"], voice: "Practical and concise", audience: "Clinical researchers" });
+    expect(studio.newsAuto).toBe(false);
+  });
+  it("keeps a conversational history and image ideas without drafting or publishing", async () => {
+    fixture.complete.mockResolvedValue({ reply: "What surprised you about that project?", ideas: [{ title: "A small useful tool", angle: "Discuss the tradeoff and the lesson.", question: "What did you learn?" }], visual: { prompt: "A clean process diagram.", altText: "A process diagram.", photoQuery: "automation workshop" } });
+    await publicistConversation("Let's explore a project I built.", 0, []);
+    const studio = await loadStudio();
+    expect(studio.publicistChat.messages.map((item) => item.role)).toEqual(["user", "assistant"]);
+    expect(studio.publicistChat.visual?.prompt).toBe("A clean process diagram.");
+    expect(studio.publicistChat.ideas).toHaveLength(1);
+    expect(studio.drafts).toEqual([]);
+    expect(fetcher).not.toHaveBeenCalled();
+    await expect(publicistConversation("An old tab", 0, [])).rejects.toThrow("conversation changed");
+  });
+  it("discards a conversation answer after the user starts over", async () => {
+    fixture.complete.mockImplementationOnce(async () => {
+      await resetPublicistConversation({ revision: (await loadStudio()).publicistChat.revision });
+      return { reply: "Old answer", ideas: [], visual: { prompt: "", altText: "", photoQuery: "" } };
+    });
+    await expect(publicistConversation("Let's explore a project.", 0, [])).rejects.toThrow("replaced");
+    expect((await loadStudio()).publicistChat.messages).toEqual([]);
+  });
+  it("does not export an active generation lease", async () => {
+    await updateStudio((studio) => { studio.publicistChat.pending = { id: "private-live-request", at: Date.now() }; });
+    const data = await buildExport(db());
+    expect(data.settings.find((item) => item.key === studioKey)?.value).not.toContain("private-live-request");
+    expect((await loadStudio()).publicistChat.pending?.id).toBe("private-live-request");
+  });
   it("gives career AI published ranges and relative comparisons, without exact private pay", async () => {
     await updateStudio((studio) => { studio.watch = { ...studio.watch, role: "Platform engineer", annualBase: 97321, targetBase: 142789 }; });
     await db().posting.create({ data: { source: "LINKEDIN", externalId: "fixture-pay", title: "Platform engineer", company: "Fixture", url: "https://example.com/job", salary: "USD 120,000–160,000/year", savedAt: new Date(), complete: true } });

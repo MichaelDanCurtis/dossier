@@ -73,3 +73,28 @@ URL-backed tab.
 Career Agent, Publicist and Personal Website use task tabs that preserve local
 drafts and selections. Generated drafts open Saved drafts, and a website preview
 opens Preview & export. The main sidebar is unchanged.
+
+## Publicist workshop
+
+The Write tab starts a durable brainstorming conversation and offers story
+angles before drafting. Users choose a direction and explicitly generate/edit a
+saved post or article. Sources supports industry search through Google News RSS,
+custom public HTTPS RSS/Atom feeds, topic matching and exclusions. Requests use
+public DNS validation at connection time, checked redirects and response limits.
+Settings separates Publicist connection/model/effort/voice/audience from global
+AI settings; model lists are fetched from the chosen provider. Effort is applied
+where supported. News filter edits and model/voice edits preserve each other.
+
+Images offers visual briefs, photo-search links, and optional OpenAI Images API
+generation using a chosen saved OpenAI connection and a dynamically discovered
+GPT Image model. Generation requires an explicit approved prompt, has no
+automatic retries, returns a PNG download, and records the request separately
+from text-token usage. Generated images are browser-local until downloaded and
+are not attached to LinkedIn posts automatically.
+
+Official image API reference:
+https://developers.openai.com/api/docs/guides/image-generation
+
+LinkedIn Publishing now explains app credentials versus member login, API scopes
+versus browser sessions, and setup/consent steps. Browser automation is technically
+possible but not installed as an unattended reader in this release.

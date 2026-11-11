@@ -21,6 +21,8 @@ export const USAGE_TASKS = [
   { task: "writing-assist", label: "Writing assistance", hint: "Suggestions for selected profile and resume text" },
   { task: "linkedin-message", label: "LinkedIn message review", hint: "Private notes and possible next steps" },
   { task: "publicist-draft", label: "Publicist drafts", hint: "Reviewed posts and articles" },
+  { task: "publicist-chat", label: "Publicist brainstorming", hint: "Conversations about angles, audience and visuals" },
+  { task: "publicist-image", label: "Publicist images", hint: "Explicit image requests; image charges are separate from text tokens" },
   { task: "classify-reply", label: "Reading replies", hint: "Employers' mail from Gmail, read in the background" },
   { task: "draft-reply", label: "Drafting answers", hint: "Your answers to employers' replies" },
   { task: "connection-check", label: "Connection checks", hint: "Test connection in Settings" },
