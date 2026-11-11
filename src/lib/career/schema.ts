@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { searchQuerySchema } from "@/lib/job-search/search";
 
-export const CAREER_KINDS = ["INTERVIEW", "PROJECT", "REVIEW", "COACH"] as const;
+export const CAREER_KINDS = ["INTERVIEW", "PROJECT", "REVIEW", "COACH", "OPPORTUNITY", "PRACTICE", "REPOSITORY"] as const;
 export const careerKindSchema = z.enum(CAREER_KINDS);
 export type CareerKind = z.infer<typeof careerKindSchema>;
 const short = z.string().trim().max(300);

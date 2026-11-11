@@ -12,6 +12,9 @@ import { lockForTransaction } from "@/lib/db-lock";
 import { defineJob } from "@/lib/jobs/runner";
 import { prisma } from "@/lib/prisma";
 import { loadProfile } from "@/lib/profile-data";
+import { opportunityCoach, OPPORTUNITY_COACH_VERSION } from "@/lib/ai/tasks/opportunity-coach";
+import { repositoryCoach, REPOSITORY_COACH_VERSION } from "@/lib/ai/tasks/repository-coach";
+import { repositoryProvider } from "./repositories";
 
 import { currentCareerPreferences, proposalBaseline } from "./data";
 import { careerKindSchema } from "./schema";
@@ -27,13 +30,16 @@ export const careerTurnJob = defineJob({
     if (!message) throw new Error("The saved answer no longer exists.");
     if (session.messages.some((row) => row.replyToId === messageId)) return { sessionId };
     await step(finishing ? "Preparing your career review" : "Thinking about your answer");
-    const [provider, options, profile, preferences] = await Promise.all([getAiProvider(), loadTaskOptions(), loadProfile(), currentCareerPreferences()]);
+    const [provider, options, profile, preferences] = await Promise.all([session.kind === "REPOSITORY" ? repositoryProvider() : getAiProvider(), loadTaskOptions(), loadProfile(), currentCareerPreferences()]);
     const coachContext = session.kind === "COACH" ? await loadResumeContext(session.linkedRecordId ?? undefined) : null;
-    const generate = async () => session.kind === "COACH" ? await resumeCoach(provider, { context: coachContext!, history: session.messages.filter((row) => row.ordinal <= message.ordinal), finishing }, { ...options, signal }) : await careerInterview(provider, { kind: careerKindSchema.parse(session.kind), title: session.title, profile, history: session.messages.filter((row) => row.ordinal <= message.ordinal), finishing, preferences, reviewContext: session.kind === "REVIEW" ? session.contextJson : undefined }, { ...options, signal });
-    const answer = message.origin === "SCHEDULE" ? await withAiRequestBudget(2, 2048, generate) : await generate();
+    const history = session.messages.filter((row) => row.ordinal <= message.ordinal);
+    const opportunity = session.kind === "OPPORTUNITY" || session.kind === "PRACTICE";
+    const generate = async () => opportunity ? await opportunityCoach(provider, { kind: session.kind, contextJson: session.contextJson, history, finishing }, { ...options, signal }) : session.kind === "REPOSITORY" ? await repositoryCoach(provider, { contextJson: session.contextJson, history, profile, finishing }, { ...options, signal }) : session.kind === "COACH" ? await resumeCoach(provider, { context: coachContext!, history, finishing }, { ...options, signal }) : await careerInterview(provider, { kind: careerKindSchema.parse(session.kind), title: session.title, profile, history, finishing, preferences, reviewContext: session.kind === "REVIEW" ? session.contextJson : undefined }, { ...options, signal });
+    const answer = opportunity || session.kind === "REPOSITORY" || message.origin === "SCHEDULE" ? await withAiRequestBudget(2, session.kind === "PRACTICE" ? 2500 : opportunity ? 6000 : 2048, generate) : await generate();
     if (signal.aborted) throw signal.reason;
     await step("Saving the next question and proposals");
     if (session.kind !== "COACH" && answer.proposals.some((item) => item.proposal.kind === "RESUME_EDIT")) throw new Error("Use the resume coach for changes to resume wording.");
+    if (opportunity && answer.proposals.length) throw new Error("Interview practice cannot change profile facts.");
     const baselines = answer.proposals.map(({ proposal }) => proposalBaseline(proposal, profile));
     const validEvidence = new Set(session.messages.filter((row) => row.role === "user" && row.origin === "USER").map((row) => row.id));
     if (answer.proposals.some((item) => !item.evidenceMessageIds.length || item.evidenceMessageIds.some((id) => !validEvidence.has(id)))) throw new Error("Proposed evidence must refer to the user's saved answers.");
@@ -43,7 +49,7 @@ export const careerTurnJob = defineJob({
       if (!(await tx.careerMessage.findFirst({ where: { id: messageId, sessionId, jobId } }))) throw new Error("This saved answer was replaced or restored. Its previous response was discarded.");
       const current = await tx.careerSession.findUniqueOrThrow({ where: { id: sessionId } });
       const last = await tx.careerMessage.findFirstOrThrow({ where: { sessionId }, orderBy: { ordinal: "desc" } });
-      await tx.careerMessage.create({ data: { sessionId, ordinal: last.ordinal + 1, role: "assistant", origin: "AI", replyToId: messageId, promptVersion: session.kind === "COACH" ? RESUME_COACH_VERSION : CAREER_INTERVIEW_VERSION, text: [answer.reply, answer.question].filter(Boolean).join("\n\n") || "Your answers are ready to review." } });
+      await tx.careerMessage.create({ data: { sessionId, ordinal: last.ordinal + 1, role: "assistant", origin: "AI", replyToId: messageId, promptVersion: opportunity ? OPPORTUNITY_COACH_VERSION : session.kind === "REPOSITORY" ? REPOSITORY_COACH_VERSION : session.kind === "COACH" ? RESUME_COACH_VERSION : CAREER_INTERVIEW_VERSION, text: [answer.reply, answer.question].filter(Boolean).join("\n\n") || "Your answers are ready to review." } });
       for (let ordinal = 0; ordinal < answer.proposals.length; ordinal++) {
         const { proposal: payload, evidenceMessageIds } = answer.proposals[ordinal];
         if (payload.kind === "PREFERENCES") await tx.careerProposal.updateMany({ where: { sessionId, kind: "PREFERENCES", status: "PENDING" }, data: { status: "SUPERSEDED", revision: { increment: 1 } } });

@@ -45,6 +45,7 @@ export async function loadCareerSession(id: string): Promise<CareerSessionView |
 }
 
 export async function createCareerSession(kind: CareerKind, title: string, { periodKey, variantId }: { periodKey?: string; variantId?: string } = {}) {
+  if (["OPPORTUNITY", "PRACTICE", "REPOSITORY"].includes(kind)) throw new ActionError("Start this conversation from its opportunity or repository workspace.");
   const profile = await loadProfile();
   const resume = kind === "COACH" ? await loadResumeContext(variantId) : null;
   const contextJson = resume ? JSON.stringify({ ...resume, profile: { ...resume.profile, photo: null } }) : kind === "REVIEW" ? await careerReviewContext() : profileForPrompt(profile);

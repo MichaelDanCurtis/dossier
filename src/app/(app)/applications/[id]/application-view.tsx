@@ -704,6 +704,7 @@ export function ApplicationView({
                 Download PDF
               </DownloadPdfButton>
             )}
+            <Link href={`/career?section=opportunities&application=${application.id}`} className="text-sm underline">Briefing & interview practice</Link>
             <ApplicationMenu id={application.id} archived={application.archived} />
           </>
         }

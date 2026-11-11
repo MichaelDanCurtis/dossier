@@ -1,7 +1,7 @@
 import { render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { usageFigures } from "@/lib/usage";
+import { USAGE_TASKS, usageFigures } from "@/lib/usage";
 
 import { UsageScreen } from "./usage-screen";
 
@@ -29,7 +29,7 @@ describe("UsageScreen (#290)", () => {
     expect(screen.getByRole("radio", { name: "Last 30 days" })).toBeChecked();
     const tasks = screen.getAllByRole("rowheader").map((header) => header.querySelector("span")?.textContent ?? header.textContent);
     expect(tasks.slice(0, 2)).toEqual(["Writing resumes", "Scoring postings with Jev"]);
-    expect(tasks).toHaveLength(22);
+    expect(tasks).toHaveLength(USAGE_TASKS.length + 1);
     expect(tasks.at(-1)).toBe("All tasks");
     expect(cells("Writing resumes")).toEqual(["4", "24,000", "6,500", "30,500"]);
     expect(cells("Connection checks")).toEqual(["0", "0", "0", "0"]);
