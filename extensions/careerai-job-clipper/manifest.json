@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "CareerAI — Save LinkedIn jobs",
-  "version": "0.1.1",
-  "description": "Review and save the LinkedIn job you are viewing to your private CareerAI account.",
+  "version": "0.2.0",
+  "description": "Collect selected LinkedIn jobs from your Chrome search for private CareerAI fit reviews and resume preparation.",
   "permissions": [
     "activeTab",
     "scripting",

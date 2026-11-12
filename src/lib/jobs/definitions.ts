@@ -22,3 +22,4 @@ import "@/lib/career/jobs";
 import "@/lib/company-boards/jobs";
 
 import "@/lib/studio/linkedin-job";
+import "@/lib/linkedin-review/jobs";

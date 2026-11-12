@@ -32,14 +32,17 @@ export function ChromeJobExtension({ available }: { available: boolean }) {
   });
   return <div className="max-w-[960px] space-y-5">
     <section className="space-y-3 rounded-panel border border-line-card bg-card p-5">
-      <h2 className="font-heading text-section">Save jobs from your own Chrome</h2>
-      <p className="text-sm text-muted">Browse LinkedIn normally, capture the job you are viewing, review its details, then save it to your private CareerAI workspace. LinkedIn cookies stay in Chrome.</p>
+      <h2 className="font-heading text-section">Collect LinkedIn jobs from your own Chrome</h2>
+      <p className="text-sm text-muted">Choose up to ten results from a search. The extension reads their full descriptions in your signed-in tab and saves them for AI career review. LinkedIn cookies stay in Chrome.</p>
       <ol className="list-inside list-decimal space-y-2 text-sm">
         <li><a download href="/careerai-job-clipper.zip" className="underline">Download the CareerAI Chrome extension</a> and unzip it.</li>
         <li>Open <code>chrome://extensions</code> in Chrome, enable Developer mode, choose <strong>Load unpacked</strong>, and select the unzipped folder containing <code>manifest.json</code>.</li>
         <li>Pin CareerAI from Chrome’s extensions menu. Generate a pairing code below and paste it into the extension.</li>
-        <li>Open a LinkedIn job, press <strong>Capture current job</strong>, correct any missing details, approve, and save.</li>
+        <li>Open a LinkedIn job search, click the CareerAI toolbar icon, then <strong>Choose jobs from this search</strong>.</li>
+        <li>Choose up to ten results and start collection. Keep its progress page and the LinkedIn tab open. You can stop at any time.</li>
+        <li>Press <strong>Open CareerAI review</strong>, then review the jobs with AI. Prepare a résumé only for the roles you choose.</li>
       </ol>
+      <p className="text-sm text-muted">Already installed? Replace the files in the existing extension folder with this download, then press Reload at <code>chrome://extensions</code>. Keep the existing installation to preserve its pairing. Version 0.2.0 adds collection without new browser permissions.</p>
       <p className="text-xs text-muted">This is a private unpacked extension. It has no cookie access, background crawler, application submission or publishing controls. LinkedIn’s restrictions on extensions and copying data still apply.</p>
     </section>
     {available ? <section className="space-y-4 rounded-panel border border-line-card bg-card p-5">

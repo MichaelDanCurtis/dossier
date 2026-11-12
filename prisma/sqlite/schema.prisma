@@ -699,6 +699,8 @@ model Posting {
   description   String        @default("")
   /// False while the description is only the start of the posting.
   complete      Boolean       @default(false)
+  /// Career-aware AI review, tied to the posting and profile snapshot; parsed on read.
+  careerReviewJson String      @default("")
   savedAt       DateTime?
   /// Dismissed postings stay out of later searches.
   dismissedAt   DateTime?

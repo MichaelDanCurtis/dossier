@@ -1,0 +1,1 @@
+ALTER TABLE "Posting" ADD COLUMN "careerReviewJson" TEXT NOT NULL DEFAULT '';

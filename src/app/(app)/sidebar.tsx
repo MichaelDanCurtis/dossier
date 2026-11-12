@@ -1,4 +1,4 @@
-import { LogOut, Palette, Plus } from "lucide-react";
+import { Download, LogOut, Palette, Plus } from "lucide-react";
 import Link from "next/link";
 
 import { BrandMark } from "@/components/brand-mark";
@@ -84,6 +84,10 @@ export function Sidebar({
           </>
         )}
         <ThemeToggle serverScheme={colorScheme} />
+        <a href="/careerai-job-clipper.zip" download title="Download the CareerAI Chrome extension" className="flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm font-medium text-muted hover:bg-hover hover:text-ink group-data-collapsed/sidebar:justify-center group-data-collapsed/sidebar:px-1.5">
+          <Download size={16} aria-hidden="true" className="shrink-0" />
+          <span className="group-data-collapsed/sidebar:sr-only">Get Chrome extension</span>
+        </a>
         <Link href="/settings?section=appearance" title="Appearance" className="flex items-center gap-1.5 rounded-control px-3 py-1.5 text-sm font-medium text-muted hover:bg-hover hover:text-ink group-data-collapsed/sidebar:justify-center group-data-collapsed/sidebar:px-1.5">
           <Palette size={16} aria-hidden="true" className="shrink-0" />
           <span className="group-data-collapsed/sidebar:sr-only">Appearance</span>

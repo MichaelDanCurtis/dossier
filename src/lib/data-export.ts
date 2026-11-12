@@ -370,6 +370,7 @@ const posting = z.object({
   via: text,
   description: text,
   complete: z.boolean(),
+  careerReviewJson: z.string().max(30000).default(""),
   savedAt: optionalDate,
   dismissedAt: optionalDate,
   applicationId: text.nullable(),

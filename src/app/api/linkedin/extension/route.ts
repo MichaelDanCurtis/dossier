@@ -3,7 +3,7 @@ import { z } from "zod";
 import { route } from "@/lib/route";
 import { canonicalLinkedinJob, importLinkedinOpportunity, linkedinImportSchema } from "@/lib/linkedin-import";
 
-const inputSchema = linkedinImportSchema.extend({ approved: z.literal(true) }).strict();
+const inputSchema = linkedinImportSchema.extend({ approved: z.literal(true), collection: z.literal(true).optional() }).strict();
 export const POST = route(async (request) => {
   if (!request.headers.get("content-type")?.startsWith("application/json")) return NextResponse.json({ error: "Use JSON job details." }, { status: 415 });
   const reader = request.body?.getReader();
@@ -16,6 +16,6 @@ export const POST = route(async (request) => {
   try { input = inputSchema.safeParse(JSON.parse(Buffer.concat(parts).toString("utf8"))); } catch { return NextResponse.json({ error: "Review the job fields and approve saving." }, { status: 400 }); }
   if (!input.success) return NextResponse.json({ error: "Review the role, company and full description (at least 80 characters), then approve saving." }, { status: 400 });
   try { canonicalLinkedinJob(input.data.url); } catch { return NextResponse.json({ error: "Use a LinkedIn job link starting https://www.linkedin.com/jobs/view/." }, { status: 400 }); }
-  const posting = await importLinkedinOpportunity(input.data, "CareerAI Chrome extension · user-reviewed import");
+  const posting = await importLinkedinOpportunity(input.data, input.data.collection ? "CareerAI Chrome collection · user-started import" : "CareerAI Chrome extension · user-reviewed import");
   return NextResponse.json({ id: posting.id, saved: true }, { status: 200 });
 });
