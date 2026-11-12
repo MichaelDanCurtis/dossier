@@ -1,4 +1,8 @@
-# CareerAI job clipper — Chrome extension 0.1.0
+# CareerAI job clipper — Chrome extension 0.1.1
+
+Version 0.1.1 supports LinkedIn's newer job-details layout, retains paragraph boundaries, captures published pay and explicit remote status, and refuses stale descriptions during a job switch. Existing permissions and the extension identity are unchanged.
+
+To update an existing unpacked installation, replace the files in its existing folder with the new download, then press Reload for CareerAI at `chrome://extensions`. Keep the same folder and do not Remove the extension; reloading preserves its pairing.
 
 1. Open `chrome://extensions`, enable Developer mode, and choose Load unpacked. Select this folder (the one containing manifest.json).
 2. Pin CareerAI in Chrome’s extensions menu.

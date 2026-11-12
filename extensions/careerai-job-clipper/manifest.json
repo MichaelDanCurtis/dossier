@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CareerAI — Save LinkedIn jobs",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Review and save the LinkedIn job you are viewing to your private CareerAI account.",
   "permissions": [
     "activeTab",

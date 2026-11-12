@@ -19,6 +19,23 @@ test('refuses unrelated sites and jobs home without a selected opportunity', () 
   }
   delete globalThis.document; delete globalThis.location;
 });
+test('captures the current job from the newer LinkedIn layout without generated class names', () => {
+  const dom = new JSDOM(`<body><aside>PRIVATE INBOX</aside><div><header><p><a href="https://www.linkedin.com/company/livekitco/life/">LiveKit</a></p><p><a href="/jobs/view/4458671008/?trackingId=secret">Forward Deployed Engineer</a></p><p>Seattle, WA · Reposted 1 week ago · Over 100 people clicked apply</p><p>Promoted by hirer · Responses managed off LinkedIn</p><a href="#">$180K/yr - $320K/yr</a><a href="#">Remote</a><a href="#">Full-time</a><button>Apply now</button></header><div id="JobDetails_AboutTheJob_4458671008"><h2>About the job</h2><p>Build voice AI and real-time systems.</p><p>Work with customer engineering teams on production integrations.</p><ul><li>Seven years of infrastructure experience.</li><li>Go, Python, Node or Rust.</li></ul><textarea>PRIVATE FORM</textarea></div></div></body>`, { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=4458671008&trackingId=private' });
+  globalThis.document = dom.window.document; globalThis.location = dom.window.location;
+  const result = extractLinkedinJob();
+  assert.equal(result.url, 'https://www.linkedin.com/jobs/view/4458671008/');
+  assert.equal(result.title, 'Forward Deployed Engineer'); assert.equal(result.company, 'LiveKit'); assert.equal(result.place, 'Seattle, WA');
+  assert.equal(result.salary, '$180K/yr - $320K/yr'); assert.equal(result.remote, true);
+  assert.match(result.text, /systems\.\nWork/); assert.match(result.text, /experience\.\nGo/);
+  assert.ok(!JSON.stringify(result).includes('PRIVATE')); assert.ok(!result.text.includes('Apply now'));
+  dom.window.close(); delete globalThis.document; delete globalThis.location;
+});
+test('refuses stale job details while LinkedIn changes the selected opportunity', () => {
+  const dom = new JSDOM('<div id="JobDetails_AboutTheJob_1111">Previous job details.</div>', { url: 'https://www.linkedin.com/jobs/search-results/?currentJobId=2222' });
+  globalThis.document = dom.window.document; globalThis.location = dom.window.location;
+  assert.throws(() => extractLinkedinJob(), /switching jobs/);
+  dom.window.close(); delete globalThis.document; delete globalThis.location;
+});
 test('minimal permissions and no unattended LinkedIn access', async () => {
   const manifest = JSON.parse(await readFile(new URL('./manifest.json', import.meta.url), 'utf8'));
   assert.deepEqual(manifest.permissions, ['activeTab', 'scripting', 'storage']);

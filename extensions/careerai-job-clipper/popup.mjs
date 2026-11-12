@@ -37,7 +37,7 @@ $('capture').addEventListener('click', () => { void work(async () => {
   if (!capture?.result) throw new Error('The job could not be captured. Open the job details and try again.');
   const job = capture.result;
   for (const id of ['url', 'title', 'company', 'place', 'salary', 'text']) $(id).value = typeof job[id] === 'string' ? job[id] : '';
-  $('remote').checked = false; $('approved').checked = false; $('review').hidden = false; $('saved').hidden = true;
+  $('remote').checked = job.remote === true; $('approved').checked = false; $('review').hidden = false; $('saved').hidden = true;
   report('Review the captured details. Correct missing fields before saving.');
 }); });
 $('review').addEventListener('input', (event) => { if (event.target.id !== 'approved') $('approved').checked = false; render(); });
