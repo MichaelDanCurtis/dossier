@@ -42,7 +42,7 @@ export function ChromeJobExtension({ available }: { available: boolean }) {
         <li>Choose up to ten results and start collection. Keep its progress page and the LinkedIn tab open. You can stop at any time.</li>
         <li>Press <strong>Open CareerAI review</strong>, then review the jobs with AI. Prepare a résumé only for the roles you choose.</li>
       </ol>
-      <p className="text-sm text-muted">Already installed? Replace the files in the existing extension folder with this download, then press Reload at <code>chrome://extensions</code>. Keep the existing installation to preserve its pairing. Version 0.2.0 adds collection without new browser permissions.</p>
+      <p className="text-sm text-muted">Already installed? Replace the files in the existing extension folder with this download, then press Reload at <code>chrome://extensions</code>. Keep the existing installation to preserve its pairing. Version 0.2.1 fixes title capture on individual job pages without new browser permissions.</p>
       <p className="text-xs text-muted">This is a private unpacked extension. It has no cookie access, background crawler, application submission or publishing controls. LinkedIn’s restrictions on extensions and copying data still apply.</p>
     </section>
     {available ? <section className="space-y-4 rounded-panel border border-line-card bg-card p-5">

@@ -1,6 +1,8 @@
-# CareerAI job collection — Chrome extension 0.2.0
+# CareerAI job collection — Chrome extension 0.2.1
 
 Version 0.2.0 adds a user-started collection page for up to ten chosen search results. It reads full job descriptions sequentially in the original LinkedIn tab, opens each new page at least eight seconds after the previous one, and saves the jobs for career-aware AI review. It supports LinkedIn's newer and legacy layouts. Browser permissions and extension identity are unchanged.
+
+Version 0.2.1 fixes individual job pages where the role is plain text and employment labels such as On-site link to the same job URL. It reads the nearby job header and waits if the actual title is missing.
 
 To update an existing unpacked installation, replace the files in its existing folder with the new download, then press Reload for CareerAI at `chrome://extensions`. Keep the same folder and do not Remove the extension; reloading preserves its pairing.
 

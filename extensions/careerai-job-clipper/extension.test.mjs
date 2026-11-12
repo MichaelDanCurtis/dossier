@@ -36,6 +36,26 @@ test('refuses stale job details while LinkedIn changes the selected opportunity'
   assert.throws(() => extractLinkedinJob(), /switching jobs/);
   dom.window.close(); delete globalThis.document; delete globalThis.location;
 });
+test('captures plain-text titles on individual jobs instead of self-linked employment chips', () => {
+  const description = 'Build shared memory, integrations and collaboration tools for customer engineering teams. '.repeat(3);
+  const dom = new JSDOM(`<body><aside><h1>Unrelated role</h1><a href="/company/other/">Other company</a></aside><main><div><div><a href="/company/sageox/life/"></a><p><a href="/company/sageox/life/">SageOx</a></p></div><div><p>Forward Deployed Engineer</p></div><p>Seattle, WA · 3 weeks ago · Over 100 people clicked apply</p><a href="/jobs/view/4480559467/">On-site</a><a href="/jobs/view/4480559467/">Full-time</a><button>Apply</button></div><div><div>Use AI to assess how you fit</div><section id="JobDetailsPeopleWhoCanHelpSlot_4480559467">People you can reach out to</section><div id="JobDetails_AboutTheJob_4480559467"><h2>About the job</h2><p>${description}</p></div><section><a href="/company/wrong/">Different recommended company</a></section></div></main></body>`, { url: 'https://www.linkedin.com/jobs/view/4480559467/' });
+  globalThis.document = dom.window.document; globalThis.location = dom.window.location;
+  const result = extractLinkedinJob();
+  assert.equal(result.title, 'Forward Deployed Engineer'); assert.equal(result.company, 'SageOx'); assert.equal(result.place, 'Seattle, WA'); assert.equal(result.remote, false); assert.ok(result.text.includes(description.trim()));
+  dom.window.close(); delete globalThis.document; delete globalThis.location;
+});
+test('does not accept employment chips as the title when the actual title has not loaded', () => {
+  const dom = new JSDOM(`<body><header><p><a href="/company/livekitco/">LiveKit</a></p><p>Seattle, WA · 1 week ago</p><p><a href="/jobs/view/4458671008/">Remote</a></p><p>Full-time</p></header><div id="JobDetails_AboutTheJob_4458671008">${'Build useful developer infrastructure. '.repeat(4)}</div></body>`, { url: 'https://www.linkedin.com/jobs/view/4458671008/' });
+  globalThis.document = dom.window.document; globalThis.location = dom.window.location;
+  assert.throws(() => extractLinkedinJob(), /title is not ready/);
+  dom.window.close(); delete globalThis.document; delete globalThis.location;
+});
+test('does not borrow a company from the About the company section below the description', () => {
+  const dom = new JSDOM(`<body><header><p>Engineer</p></header><div id="JobDetails_AboutTheJob_4458671008">${'Build useful developer infrastructure. '.repeat(4)}</div><section><a href="/company/livekitco/">LiveKit</a></section></body>`, { url: 'https://www.linkedin.com/jobs/view/4458671008/' });
+  globalThis.document = dom.window.document; globalThis.location = dom.window.location;
+  assert.throws(() => extractLinkedinJob(), /still loading/);
+  dom.window.close(); delete globalThis.document; delete globalThis.location;
+});
 test('minimal permissions and no unattended LinkedIn access', async () => {
   const manifest = JSON.parse(await readFile(new URL('./manifest.json', import.meta.url), 'utf8'));
   assert.deepEqual(manifest.permissions, ['activeTab', 'scripting', 'storage']);
