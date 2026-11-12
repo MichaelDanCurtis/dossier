@@ -89,6 +89,6 @@ test('the in-page Stop remains usable while a progress request is waiting on a s
     poll();root.getElementById('stop').click();await new Promise(resolve=>setImmediate(resolve));
     assert.ok(calls.includes('STOP'),'Stop must reach Chrome before a pending progress response returns');
     resolveStatus({ok:true,state});await new Promise(resolve=>setImmediate(resolve));
-    root.getElementById('close').click();assert.equal(root.getElementById('veil').hidden,true);
+    root.getElementById('close').click();assert.equal(root.getElementById('veil').hidden,true);assert.equal(root.activeElement,root.getElementById('launcher'));
   }finally{page.window.close();}
 });
