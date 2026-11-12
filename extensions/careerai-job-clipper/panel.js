@@ -35,12 +35,19 @@
   </section></div>`;
   document.documentElement.append(host);
   const $ = id => root.getElementById(id), base = 'https://careerai.thecurtis.cloud';
-  let open = false, lastFocus, state = {}, error = '', sending = false, lastRendered = '';
+  let open = false, lastFocus, state = {}, error = '', sending = false, polling = false, lastRendered = '';
   const el = (tag, text, cls) => { const node = document.createElement(tag); if (text) node.textContent = text; if (cls) node.className = cls; return node; };
   function link(text, url) { const node = el('a', text); const parsed = new URL(url); if (parsed.protocol !== 'https:' || !['careerai.thecurtis.cloud', 'www.linkedin.com'].includes(parsed.hostname)) return el('span', text); node.href = url; node.target = '_blank'; node.rel = 'noreferrer'; return node; }
   function action(text, fn) { const button = el('button', text); button.addEventListener('click', fn); return button; }
   async function send(message) { const result = await chrome.runtime.sendMessage(message); if (!result?.ok) throw new Error(result?.error || 'Reload the CareerAI extension and refresh LinkedIn.'); state = result.state; render(); return state; }
-  async function run(message) { if (sending) return; sending = true; error = ''; render(); try { await send(message); } catch (problem) { error = problem.message; } finally { sending = false; render(); } }
+  async function run(message) {
+    const passive = message.type === 'STATUS', urgent = message.type === 'STOP';
+    if (passive ? polling : !urgent && sending) return;
+    if (passive) polling = true; else if (!urgent) sending = true;
+    if (!passive) error = ''; render();
+    try { await send(message); } catch (problem) { error = problem.message; }
+    finally { if (passive) polling = false; else if (!urgent) sending = false; render(); }
+  }
   function show() { open = true; lastFocus = document.activeElement; $('veil').hidden = false; $('launcher').setAttribute('aria-expanded', 'true'); $('close').focus(); run({ type: 'OPEN_STATE' }); }
   function close() { open = false; $('veil').hidden = true; $('launcher').setAttribute('aria-expanded', 'false'); (lastFocus?.isConnected ? lastFocus : $('launcher')).focus(); }
   $('launcher').addEventListener('click', show); $('close').addEventListener('click', close);

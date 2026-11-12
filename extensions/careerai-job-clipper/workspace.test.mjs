@@ -77,3 +77,18 @@ test('worker refuses foreign senders and page pairing, and never returns its bea
     const result=await invoke({type:'STATUS'},{id:'own-extension',url:'https://www.linkedin.com/feed/',tab:{id:1}});assert.equal(result.ok,true);assert.equal(result.state.account,'alice');assert.ok(!JSON.stringify(result).includes('DO-NOT-EXPOSE'));
   }finally{delete globalThis.chrome;}
 });
+test('the in-page Stop remains usable while a progress request is waiting on a slow read',async()=>{
+  const {readFile}=await import('node:fs/promises');const code=await readFile(new URL('./panel.js',import.meta.url),'utf8');
+  const page=new JSDOM('<body></body>',{url:'https://www.linkedin.com/feed/',runScripts:'outside-only'});let root,poll,resolveStatus;const calls=[];
+  const original=page.window.Element.prototype.attachShadow;page.window.Element.prototype.attachShadow=function(options){root=original.call(this,options);return root;};
+  page.window.setInterval=fn=>{poll=fn;return 1;};
+  const state={connected:true,scope:'workspace',account:'alice',run:{status:'running',message:'Reading…'},pendingJobs:[],opportunities:[],feed:[],inbox:[],thread:[],chat:[]};
+  page.window.chrome={runtime:{onMessage:{addListener:()=>{}},sendMessage:async message=>{calls.push(message.type);if(message.type==='STATUS')return new Promise(resolve=>{resolveStatus=resolve;});return{ok:true,state};}}};
+  try{
+    page.window.eval(code);root.getElementById('launcher').click();await new Promise(resolve=>setImmediate(resolve));
+    poll();root.getElementById('stop').click();await new Promise(resolve=>setImmediate(resolve));
+    assert.ok(calls.includes('STOP'),'Stop must reach Chrome before a pending progress response returns');
+    resolveStatus({ok:true,state});await new Promise(resolve=>setImmediate(resolve));
+    root.getElementById('close').click();assert.equal(root.getElementById('veil').hidden,true);
+  }finally{page.window.close();}
+});
