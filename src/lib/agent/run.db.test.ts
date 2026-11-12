@@ -12,9 +12,12 @@ import { createTestClient, resetDatabase } from "@/test/db";
 import { MockProvider } from "../ai/providers/mock";
 
 import { agentDedupeKey, candidateData } from "./candidates";
-import { runAgentScan } from "./run";
+import { evaluateAgentPostings, runAgentScan } from "./run";
+import { foundFromPosting } from "@/lib/postings";
 import { saveAgentSearch, listAgentSearches } from "./searches";
 import { reserveRun } from "./runs";
+import { scoreLinkedinJob } from "@/lib/studio/linkedin-job";
+import { importLinkedinOpportunity } from "@/lib/linkedin-import";
 
 const db = vi.hoisted(() => ({ client: undefined as ReturnType<typeof createTestClient> | undefined }));
 vi.mock("@/lib/prisma", async () => {
@@ -119,6 +122,62 @@ beforeEach(async () => {
   await prisma().agentSearch.create({ data: { name: "My search", query } });
 });
 afterAll(() => prisma().$disconnect());
+
+describe("reviewing saved LinkedIn opportunities", () => {
+  const imported = (id: string) => importLinkedinOpportunity({ url: `https://www.linkedin.com/jobs/view/${id}/`, title: "Senior Product Designer", company: `Company ${id}`, place: "Rotterdam", remote: false, salary: "", text: "Design useful products and lead a team. Work closely with engineers and researchers. ".repeat(3) });
+
+  it("scores an imported saved job, persists its explanation and never starts an application", async () => {
+    await imported("12345");
+    await saveSettings({ agentAutoDraft: true, agentMaxDrafts: 2 });
+    const result = await scoreLinkedinJob.run({}, context());
+    expect(result).toMatchObject({ found: 1, scored: 1, drafted: 0 });
+    const saved = await prisma().postingScore.findFirstOrThrow();
+    expect(saved).toMatchObject({ source: "LINKEDIN", score: 90, reasons: ["Fits Senior Product Designer."] });
+    expect(await prisma().application.count()).toBe(0);
+    expect((await scoreLinkedinJob.run({}, context())).scored).toBe(0);
+  });
+
+  it("preserves discovery deduplication and skips manual scores and dismissed imports", async () => {
+    const untouched = await imported("12345");
+    const reviewed = await imported("12346");
+    const dismissed = await imported("12347");
+    await prisma().postingScore.create({ data: { source: reviewed.source, externalId: reviewed.externalId, score: 80, reasons: ["Already reviewed"], redFlags: [], scoredWith: "fixture" } });
+    await prisma().posting.update({ where: { id: dismissed.id }, data: { dismissedAt: new Date() } });
+    expect((await evaluateAgentPostings([foundFromPosting(untouched)], context(), await loadSettings())).scored).toBe(0);
+    const scores: string[] = []; fake.onScore = (title) => scores.push(title);
+    expect((await scoreLinkedinJob.run({}, context())).scored).toBe(1);
+    expect(scores).toHaveLength(1);
+    expect(await prisma().postingScore.count()).toBe(2);
+    expect((await prisma().postingScore.findUniqueOrThrow({ where: { source_externalId: { source: reviewed.source, externalId: reviewed.externalId } } })).scoredWith).toBe("fixture");
+    expect(fake.searches).toBe(0);
+  });
+
+  it("reviews at most ten jobs and continues the remaining jobs on the next run", async () => {
+    for (let id = 20000; id < 20012; id++) await imported(String(id));
+    await saveSettings({ agentMaxScores: 20 });
+    expect(await scoreLinkedinJob.run({}, context())).toMatchObject({ scored: 10, drafted: 0, message: expect.stringContaining("2 still need review") });
+    expect((await scoreLinkedinJob.run({}, context())).scored).toBe(2);
+    expect(await prisma().application.count()).toBe(0);
+    expect(fake.searches).toBe(0);
+  });
+
+  it("does not write a late review after cancellation", async () => {
+    await imported("12345"); const abort = new AbortController(); fake.onScore = () => abort.abort();
+    expect((await scoreLinkedinJob.run({}, context(abort))).scored).toBe(0);
+    expect(await prisma().postingScore.count()).toBe(0);
+    expect(await prisma().agentCandidate.count()).toBe(0);
+  });
+
+  it("keeps failed jobs eligible and reports a partial review", async () => {
+    await imported("12345"); const failing = await imported("12346");
+    await prisma().posting.update({ where: { id: failing.id }, data: { title: "Product Designer" } });
+    fake.failOn = "Product Designer";
+    expect(await scoreLinkedinJob.run({}, context())).toMatchObject({ scored: 1, message: expect.stringContaining("Some reviews did not finish") });
+    fake.failOn = null;
+    expect((await scoreLinkedinJob.run({}, context())).scored).toBe(1);
+    expect(await prisma().postingScore.count()).toBe(2);
+  });
+});
 
 describe("runAgentScan (E16-3)", () => {
   it("runs recurring searches with FreeHire under the same request budget", async () => {

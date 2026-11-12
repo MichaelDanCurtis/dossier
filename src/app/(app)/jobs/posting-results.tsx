@@ -24,6 +24,9 @@ const NARROW = "(max-width: 1023px)";
 
 export type PostingResultsProps = {
   today: string;
+  embedded?: boolean;
+  startLabel?: string;
+  emptyMessage?: string;
   /** Score opens a Claude chat, which scores through the connector: it's on, and CareerAI has no AI model of its own (#221). */
   scoreInClaude?: boolean;
 } & (
@@ -159,7 +162,7 @@ export function PostingResults(props: PostingResultsProps) {
 
   const searched = props.mode === "search" ? props.search.query : null;
   const radius = props.mode === "search" && SOURCE_INFO[props.search.source].radius;
-  const empty =
+  const empty = props.emptyMessage ?? (
     mode === "saved"
       ? "Nothing saved yet. Save a posting from your search results to keep it here."
       : mode === "dismissed"
@@ -169,10 +172,10 @@ export function PostingResults(props: PostingResultsProps) {
           ? "You've dismissed every posting here."
           : radius
             ? `No postings for “${searched.keywords}”${searched.place ? ` within ${searched.radiusKm} km of ${searched.place}` : ""}. Try a bigger radius or fewer words.`
-            : `No postings for “${searched.keywords}”${searched.place ? ` in ${searched.place}` : ""}. Try fewer words.`;
+            : `No postings for “${searched.keywords}”${searched.place ? ` in ${searched.place}` : ""}. Try fewer words.`);
 
   return (
-    <div className="flex flex-wrap items-start gap-6 px-10 pb-16">
+    <div className={cn("flex flex-wrap items-start gap-6 pb-16", !props.embedded && "px-10")}>
       {Object.entries(scoring).map(([key, { jobId }]) =>
         jobId ? <ScoreWatcher key={jobId} jobId={jobId} onChange={(job) => scoringChanged(key, job)} /> : null,
       )}
@@ -241,7 +244,7 @@ export function PostingResults(props: PostingResultsProps) {
           onScore={() => void score(selected)}
         >
           {!selected.state.dismissed && (selected.source !== "DIRECT" || selected.complete) && (
-            <StartButton starting={starting === postingKey(selected)} onClick={() => void start(withoutState(selected), postingKey(selected))} />
+            <StartButton label={props.startLabel} starting={starting === postingKey(selected)} onClick={() => void start(withoutState(selected), postingKey(selected))} />
           )}
         </PostingDetail>
       )}
@@ -263,10 +266,10 @@ function ScoreWatcher({ jobId, onChange }: { jobId: string; onChange: (job: JobV
 }
 
 /** "Start application →" on a posting (E14-8). */
-export function StartButton({ starting, onClick }: { starting: boolean; onClick: () => void }) {
+export function StartButton({ starting, onClick, label = "Start application →" }: { starting: boolean; onClick: () => void; label?: string }) {
   return (
     <Button size="sm" aria-disabled={starting || undefined} onClick={starting ? undefined : onClick}>
-      {starting ? "Starting…" : "Start application →"}
+      {starting ? "Starting…" : label}
     </Button>
   );
 }

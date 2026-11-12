@@ -6,12 +6,12 @@ import { useEffect, type ReactNode } from "react";
 import { SectionPanel, SectionTabs } from "@/components/section-tabs";
 
 const sections = [
+  { id: "jobs", label: "Job review" },
   { id: "extension", label: "Chrome extension" },
-  { id: "browser", label: "Browser bridge" },
-  { id: "jobs", label: "Jobs" },
   { id: "feed", label: "Feed & sources" },
   { id: "messages", label: "Messages" },
   { id: "publishing", label: "Publishing" },
+  { id: "browser", label: "Hosted browser (experimental)" },
 ] as const;
 type Section = typeof sections[number]["id"];
 

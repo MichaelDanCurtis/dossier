@@ -73,12 +73,14 @@ async function setupProblemFor(searches: readonly SavedAgentSearch[], config: Jo
   return null;
 }
 
-/** The postings from a page that are new to the agent: not saved, dismissed or applied for, and not a candidate already. */
-export async function newPostings(postings: readonly FoundPosting[]): Promise<FoundPosting[]> {
+type EvaluationOptions = { reviewSaved?: boolean };
+
+/** Discovery skips saved jobs; an explicit saved-job review admits unscored saved jobs. Both skip dismissed, applied and known candidates. */
+export async function newPostings(postings: readonly FoundPosting[], { reviewSaved = false }: EvaluationOptions = {}): Promise<FoundPosting[]> {
   const states = await postingStates(postings);
   const unseen = postings.filter((posting) => {
     const state = states.get(postingKey(posting));
-    return !state?.saved && !state?.dismissed && !state?.applicationId;
+    return (reviewSaved ? !state?.score : !state?.saved) && !state?.dismissed && !state?.applicationId;
   });
   const keys = unseen.map(agentDedupeKey);
   const known = await prisma.agentCandidate.findMany({
@@ -205,8 +207,8 @@ export function roundRobinPostings(pages: readonly (readonly FoundPosting[])[]):
 }
 
 /** Evaluate one ordered collection with shared score/draft caps. No source calls. */
-export async function evaluateAgentPostings(postings: readonly FoundPosting[], context: JobContext, settings: SettingsData): Promise<AgentScanResult> {
-  const fresh = await newPostings(postings);
+export async function evaluateAgentPostings(postings: readonly FoundPosting[], context: JobContext, settings: SettingsData, options: EvaluationOptions = {}): Promise<AgentScanResult> {
+  const fresh = await newPostings(postings, options);
   const counts = { found: postings.length, fresh: fresh.length, skipped: postings.length - fresh.length, drafted: 0 };
   if (fresh.length === 0) return { ...counts, scored: 0, message: postings.length === 0 ? "The search found no postings this time." : "No new postings this time." };
 
