@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const linkedinReviewInput = z.object({ postingIds: z.array(z.string().min(1).max(100)).min(1).max(10).optional(), force: z.boolean().default(false) }).strict();
+export const linkedinReviewInput = z.object({ postingIds: z.array(z.string().min(1).max(100)).min(1).max(50).optional(), force: z.boolean().default(false) }).strict();
 export const linkedinReviewAnswer = z.object({
   score: z.number().int().min(0).max(100),
   recommendation: z.enum(["PURSUE", "EXPLORE", "PASS"]),

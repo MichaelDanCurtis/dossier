@@ -56,11 +56,11 @@ test('does not borrow a company from the About the company section below the des
   assert.throws(() => extractLinkedinJob(), /still loading/);
   dom.window.close(); delete globalThis.document; delete globalThis.location;
 });
-test('minimal permissions and no unattended LinkedIn access', async () => {
+test('optional LinkedIn access stays explicit, with no cookie or debugger permission', async () => {
   const manifest = JSON.parse(await readFile(new URL('./manifest.json', import.meta.url), 'utf8'));
   assert.deepEqual(manifest.permissions, ['activeTab', 'scripting', 'storage']);
   assert.deepEqual(manifest.host_permissions, ['https://careerai.thecurtis.cloud/*']);
-  assert.equal(manifest.background, undefined); assert.equal(manifest.content_scripts, undefined);
-  const script = await readFile(new URL('./popup.mjs', import.meta.url), 'utf8');
+  assert.deepEqual(manifest.optional_host_permissions, ['https://www.linkedin.com/*']); assert.deepEqual(manifest.background, { service_worker: 'worker.mjs', type: 'module' }); assert.equal(manifest.content_scripts, undefined);
+  const script = await readFile(new URL('./api.mjs', import.meta.url), 'utf8');
   assert.ok(script.includes("credentials: 'omit'")); assert.ok(!/chrome\.(cookies|debugger|webRequest)/.test(script)); assert.ok(!/document\.cookie/.test(script));
 });

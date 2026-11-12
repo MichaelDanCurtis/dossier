@@ -36,7 +36,7 @@ async function fixture(t, options = {}) {
         const chunks = [];
         for await (const chunk of request) chunks.push(chunk);
         response.setHeader('content-type', 'application/json');
-        response.end(JSON.stringify({ username, body: Buffer.concat(chunks).toString(), cookie: request.headers.cookie, forwarded: request.headers['x-forwarded-for'], auth: request.headers.authorization, desktop: request.headers['x-dossier-desktop-token'] }));
+        response.end(JSON.stringify({ username, route: request.url, workspace: request.headers['x-careerai-extension-id'], body: Buffer.concat(chunks).toString(), cookie: request.headers.cookie, forwarded: request.headers['x-forwarded-for'], auth: request.headers.authorization, desktop: request.headers['x-dossier-desktop-token'] }));
       } catch { response.writeHead(401); response.end('Invalid native session'); }
     });
     user.upstream = await listen(backend);
@@ -277,4 +277,23 @@ test('extension credentials import only into the paired account and cannot becom
   await f.request('/_accounts/api/job-extension', { method: 'POST', headers: { cookie, origin: f.origin }, body: new URLSearchParams({ operation: 'revoke', id: 'all' }) });
   assert.equal((await f.request('/api/extension/jobs', { method: 'POST', headers, body: '{}' })).status, 401);
   assert.equal((await f.request('/api/extension/pair', { method: 'POST', headers: { origin: extension, 'content-type': 'application/json' }, body: JSON.stringify({ code: pending }) })).status, 400);
+});
+
+test('workspace grants are opt-in, account bound and carry only a trusted connection identity', async t => {
+  const f=await fixture(t), alice=await f.login('alice'), bravo=await f.login('bravo');
+  const extension='chrome-extension://'+'a'.repeat(32);
+  async function pair(operation){
+    const code=(await (await f.request('/_accounts/api/job-extension',{method:'POST',headers:{origin:f.origin,cookie:alice.cookie},body:new URLSearchParams({operation})})).json()).code;
+    return (await f.request('/api/extension/pair',{method:'POST',headers:{origin:extension,'content-type':'application/json'},body:JSON.stringify({code})})).json();
+  }
+  const jobs=await pair('pair'),workspace=await pair('pair-workspace');
+  assert.equal(jobs.scope,'jobs');assert.equal(workspace.scope,'workspace');
+  const request=token=>f.request('/api/extension/workspace',{method:'POST',headers:{origin:extension,'content-type':'application/json',authorization:`Bearer ${token}`,cookie:bravo.cookie,'x-careerai-extension-id':'attacker','next-action':'attacker'},body:JSON.stringify({kind:'STATUS'})});
+  assert.equal((await request(jobs.token)).status,403);
+  const result=await request(workspace.token);assert.equal(result.status,200);
+  const backend=await result.json();assert.equal(backend.username,'alice');assert.equal(backend.route,'/api/linkedin/extension-workspace');assert.match(backend.workspace,/^[a-f0-9]{32}$/);assert.notEqual(backend.workspace,'attacker');assert.equal(backend.auth,undefined);assert.ok(!backend.cookie.includes(COOKIE));
+  assert.equal((await f.request('/api/linkedin/extension-workspace',{method:'POST',headers:{cookie:alice.cookie,origin:f.origin,'x-careerai-extension-id':'a'.repeat(32)},body:'{}'})).status,404);
+  const normal=await (await f.request('/api/export',{headers:{cookie:alice.cookie,'x-careerai-extension-id':'attacker'}})).json();assert.equal(normal.workspace,undefined);
+  assert.equal((await f.request('/api/extension/workspace',{method:'POST',headers:{origin:'https://evil.test',authorization:`Bearer ${workspace.token}`},body:'{}'})).status,403);
+  const list=await (await f.request('/_accounts/api/job-extension',{headers:{cookie:bravo.cookie}})).json();assert.equal(list.connections.length,0);
 });

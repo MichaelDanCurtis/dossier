@@ -1,26 +1,30 @@
-# CareerAI job collection — Chrome extension 0.2.1
+# CareerAI LinkedIn workspace — Chrome extension 0.3.0
 
-Version 0.2.0 adds a user-started collection page for up to ten chosen search results. It reads full job descriptions sequentially in the original LinkedIn tab, opens each new page at least eight seconds after the previous one, and saves the jobs for career-aware AI review. It supports LinkedIn's newer and legacy layouts. Browser permissions and extension identity are unchanged.
+CareerAI now opens inside LinkedIn: a top-right button opens a modal with Jobs, Feed, Messages and Write tabs. No separate collection progress page or separate browser sign-in is needed. Reads use a background LinkedIn tab in the same Chrome profile; cookie values are never accessed or exported.
 
-Version 0.2.1 fixes individual job pages where the role is plain text and employment labels such as On-site link to the same job URL. It reads the nearby job header and waits if the actual title is missing.
+## Install or update
 
-To update an existing unpacked installation, replace the files in its existing folder with the new download, then press Reload for CareerAI at `chrome://extensions`. Keep the same folder and do not Remove the extension; reloading preserves its pairing.
+1. Unzip the download. For an existing installation, replace files in its existing folder and press Reload at `chrome://extensions`. Keep the existing installation to preserve its identity.
+2. For a new installation, enable Developer mode, choose Load unpacked and select the folder containing manifest.json. Pin CareerAI in Chrome’s extensions menu.
+3. In CareerAI → LinkedIn → Chrome extension, create a **workspace pairing code**. Paste it into the toolbar popup. The old jobs-only grant cannot access this broader workspace.
+4. Open LinkedIn in your normal signed-in Chrome. Click the toolbar icon, then **Enable / open CareerAI on LinkedIn** and approve LinkedIn site access once.
+5. Thereafter, use the CareerAI button at LinkedIn’s top right.
 
-1. Open `chrome://extensions`, enable Developer mode, and choose Load unpacked. Select this folder (the one containing manifest.json).
-2. Pin CareerAI in Chrome’s extensions menu.
-3. In CareerAI, open LinkedIn → Chrome extension. Generate a one-time pairing code, then paste it into the extension and press Connect CareerAI.
-4. Open a LinkedIn job search in Chrome, open CareerAI from the toolbar and choose **Choose jobs from this search**.
-5. Choose up to ten rendered results, approve reading/saving those descriptions, then start collection. Keep the collection page and LinkedIn tab open. Stop before using the LinkedIn tab yourself. Closing the collection page stops its work; it never resumes automatically.
-6. Open CareerAI review from the results page. Start its bounded AI career review to get summaries, evidence, tradeoffs and questions. Choose a role to prepare its resume; you review and submit applications yourself.
+## What it does
 
-Single-job capture remains available: Capture current job → correct details → approve → save. No background collection is scheduled. Only results already rendered by the search are offered, with no automatic scrolling or pagination. Sign-in, verification, lost tab access or three unreadable descriptions pause collection. Failed or ambiguous saves are not retried automatically. The progress screen links to CareerAI so you can check uncertain saves.
+- Jobs: enter a role/location or collect the current search. Choose a limit of 10, 25 or 50 jobs. Reads full descriptions sequentially, across at most five search pages. Search scrolling and page navigation are spaced at least eight seconds apart. It stops at available rendered results or its budget and says why. If AI is configured, career-fit reviews use your saved experience. Prepare a résumé only for the roles you choose.
+- Feed: collect up to 20 rendered excerpts, with up to three scrolls. Get career-relevant summaries and next steps. Missing source permalinks stay missing; excerpts do not imply that the full post or entire feed was read.
+- Messages: capture up to 20 inbox previews, select a specific conversation, or read the thread already open in your main LinkedIn tab. Opening LinkedIn’s inbox or a selected thread may mark a message read. Preview-only captures cannot generate reply drafts. Copy a reply draft and send it yourself.
+- Write: brainstorm with your existing Publicist conversation, using saved public expertise and up to six captured feed excerpts. Private messages are excluded from public writing context. Copy text to LinkedIn yourself. Native CareerAI still provides Publicist model/effort settings, images and article tools.
 
-LinkedIn login/cookies stay in Chrome. The extension does not request cookies, webRequest, debugger, browsing history, all-sites or background content-script permissions. It reads job-specific DOM using the temporary active-tab access granted by your toolbar click. Collection navigates that same tab to selected job URLs; it never submits forms, applies, posts, sends messages, reads your inbox or captures form values. There is no background worker, scheduled collection or telemetry. Chrome documents active-tab access across navigation within the same origin: https://developer.chrome.com/docs/extensions/develop/concepts/activeTab .
+Closing the modal does not stop its run. Stop closes the extension’s read tab and cancels the run’s AI review; confirmed captures remain saved. Keep Chrome running. Unexpected sign-in/security checks pause reading. No challenge solving or browser disguise is used. A suspended worker resumes its saved checkpoint on the next browser/panel event. A save interrupted in flight is paused as uncertain and never replayed automatically; check CareerAI before retrying. AI tasks also have server-side idempotency claims.
 
-Only the job details you explicitly choose to collect are sent to careerai.thecurtis.cloud over HTTPS, using an import-only token stored in this extension’s local Chrome storage (not Chrome Sync). Pairing codes expire in five minutes and work once. Connections expire after 90 days and can be revoked from CareerAI. A password reset or disabled CareerAI account invalidates existing connections. Disconnect in the popup revokes its credential; removing the extension alone does not revoke a server-side credential, so revoke it in CareerAI as well.
+## Access and privacy
 
-A re-save updates the existing canonical LinkedIn opportunity; it does not create or submit an application. Network errors are never retried automatically. Check saved jobs in CareerAI before retrying an uncertain save. Expand LinkedIn’s description first if necessary; incomplete captures must be corrected before saving.
+Required permissions: activeTab, scripting, storage, plus CareerAI’s fixed HTTPS host. Optional site access is limited to `https://www.linkedin.com/*` and enables the injected button and user-started background reading. The script does not collect anything merely by showing its button. No cookies, debugger, webRequest, browsing-history or all-sites permission. Tokens are stored only in trusted extension storage, never Chrome Sync or the page; the content script receives no credential. The modal uses a closed shadow root and renders captured/AI text as text, never executable markup.
 
-This is a private unpacked extension, not a Chrome Web Store publication or a LinkedIn-approved integration. LinkedIn’s restrictions on copying/scraping and extensions still apply: https://www.linkedin.com/help/linkedin/answer/a1341387 . This version provides user-initiated import, not unattended collection or a way around verification.
+Captured content is uploaded to your paired private CareerAI account and may be sent to its configured AI provider for reviews/drafts. Workspace grants can read captured summaries, the Publicist conversation and their own AI task results, start paid reviews, and prepare drafts with saved career context. They cannot retrieve API keys or send applications, posts, reactions or messages. Existing job-only grants remain job-only. Codes expire after five minutes and work once; grants expire after 90 days and are origin/account/revision bound. Revoke access in CareerAI or disconnect in the toolbar; removing the extension alone does not revoke a server-side token.
 
-Licensed AGPL-3.0-only; see LICENSE. The source is included in this folder and in CareerAI’s deployment source download.
+This is a private unpacked extension, not a Chrome Web Store publication or LinkedIn-approved integration. LinkedIn’s restrictions still apply. There is no unattended schedule or security-check bypass. The former standalone controller is retained in source history only and is not included in the v0.3 package. The local Python/MCP browser experiment is not part of this release; this extension uses the normal Chrome session and CareerAI’s authenticated workspace endpoint.
+
+Licensed AGPL-3.0-only; see LICENSE. All extension source ships in the ZIP and CareerAI’s deployment source download.

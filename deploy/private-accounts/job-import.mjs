@@ -12,6 +12,11 @@ export function createJobImportAccess({ databasePath = ':memory:', now = Date.no
     CREATE TABLE IF NOT EXISTS job_import_pairs(hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,revision TEXT NOT NULL,expires INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS job_import_grants(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id TEXT NOT NULL,revision TEXT NOT NULL,origin TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER NOT NULL DEFAULT 0,minute INTEGER NOT NULL DEFAULT 0,requests INTEGER NOT NULL DEFAULT 0);
     CREATE INDEX IF NOT EXISTS job_import_user ON job_import_grants(user_id);`);
+  // Existing connections remain job-only. Workspace access requires a new,
+  // explicitly scoped pairing code; upgrading never expands an old token.
+  for (const table of ['job_import_pairs', 'job_import_grants']) {
+    if (!db.prepare(`PRAGMA table_info(${table})`).all().some(column => column.name === 'scope')) db.exec(`ALTER TABLE ${table} ADD COLUMN scope TEXT NOT NULL DEFAULT 'jobs'`);
+  }
   const seconds = () => Math.floor(now() / 1000);
   function clean() {
     db.prepare('DELETE FROM job_import_pairs WHERE expires<=?').run(seconds());
@@ -21,14 +26,15 @@ export function createJobImportAccess({ databasePath = ':memory:', now = Date.no
   return {
     close: () => db.close(),
     list(user) {
-      return db.prepare('SELECT id,created,expires,last_used FROM job_import_grants WHERE user_id=? AND revision=? AND expires>? ORDER BY created DESC').all(user.id, user.revision, seconds()).map((row) => ({ id: row.id, createdAt: row.created * 1000, expiresAt: row.expires * 1000, lastUsedAt: row.last_used ? row.last_used * 1000 : null }));
+      return db.prepare('SELECT id,created,expires,last_used,scope FROM job_import_grants WHERE user_id=? AND revision=? AND expires>? ORDER BY created DESC').all(user.id, user.revision, seconds()).map((row) => ({ id: row.id, scope: row.scope, createdAt: row.created * 1000, expiresAt: row.expires * 1000, lastUsedAt: row.last_used ? row.last_used * 1000 : null }));
     },
-    pair(user) {
+    pair(user, scope = 'jobs') {
+      if (!['jobs', 'workspace'].includes(scope)) throw refuse('Choose a supported connection scope.');
       clean();
       if (count(user) >= 5) throw refuse('Revoke an old extension connection before adding another.', 409);
       const code = randomBytes(24).toString('base64url');
       db.prepare('DELETE FROM job_import_pairs WHERE user_id=?').run(user.id);
-      db.prepare('INSERT INTO job_import_pairs(hash,user_id,revision,expires) VALUES(?,?,?,?)').run(hash(code), user.id, user.revision, seconds() + 300);
+      db.prepare('INSERT INTO job_import_pairs(hash,user_id,revision,expires,scope) VALUES(?,?,?,?,?)').run(hash(code), user.id, user.revision, seconds() + 300, scope);
       return { code, expiresAt: (seconds() + 300) * 1000 };
     },
     exchange(code, origin, config) {
@@ -41,21 +47,21 @@ export function createJobImportAccess({ databasePath = ':memory:', now = Date.no
       try {
         const consumed = db.prepare('DELETE FROM job_import_pairs WHERE hash=?').run(hash(code));
         if (consumed.changes !== 1) throw refuse('Pairing code already used.');
-        db.prepare('INSERT INTO job_import_grants(id,hash,user_id,revision,origin,created,expires) VALUES(?,?,?,?,?,?,?)').run(id, hash(token), user.id, user.revision, origin, seconds(), expires);
+        db.prepare('INSERT INTO job_import_grants(id,hash,user_id,revision,origin,created,expires,scope) VALUES(?,?,?,?,?,?,?,?)').run(id, hash(token), user.id, user.revision, origin, seconds(), expires, pair.scope);
         db.exec('COMMIT');
       } catch (error) { db.exec('ROLLBACK'); throw error; }
-      return { token, account: user.username, expiresAt: expires * 1000 };
+      return { token, account: user.username, scope: pair.scope, expiresAt: expires * 1000 };
     },
     authenticate(token, origin, config, consume = true) {
       if (!extensionOrigin(origin) || typeof token !== 'string' || !/^careerai_jobs_[A-Za-z0-9_-]{43}$/.test(token)) return null;
       const grant = db.prepare('SELECT * FROM job_import_grants WHERE hash=? AND origin=? AND expires>?').get(hash(token), origin, seconds());
       const user = config.users.find((item) => item.active && item.id === grant?.user_id && item.revision === grant.revision);
       if (!user) return null;
-      if (!consume) return { user, id: grant.id };
+      if (!consume) return { user, id: grant.id, scope: grant.scope };
       const minute = Math.floor(seconds() / 60);
       if (grant.minute === minute && grant.requests >= 30) throw refuse('Too many saves. Wait a minute before trying again.', 429);
       db.prepare('UPDATE job_import_grants SET last_used=?,minute=?,requests=? WHERE id=?').run(seconds(), minute, grant.minute === minute ? grant.requests + 1 : 1, grant.id);
-      return { user, id: grant.id };
+      return { user, id: grant.id, scope: grant.scope };
     },
     revoke(user, id) {
       if (id === 'all') {
