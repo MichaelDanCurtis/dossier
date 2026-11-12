@@ -85,7 +85,7 @@ test('the in-page Stop remains usable while a progress request is waiting on a s
   const state={connected:true,scope:'workspace',account:'alice',run:{status:'running',message:'Reading…'},pendingJobs:[],opportunities:[],feed:[],inbox:[],thread:[],chat:[]};
   page.window.chrome={runtime:{onMessage:{addListener:()=>{}},sendMessage:async message=>{calls.push(message.type);if(message.type==='STATUS')return new Promise(resolve=>{resolveStatus=resolve;});return{ok:true,state};}}};
   try{
-    page.window.eval(code);root.getElementById('launcher').click();await new Promise(resolve=>setImmediate(resolve));
+    page.window.eval(code);root.getElementById('launcher').focus();root.getElementById('launcher').click();await new Promise(resolve=>setImmediate(resolve));
     poll();root.getElementById('stop').click();await new Promise(resolve=>setImmediate(resolve));
     assert.ok(calls.includes('STOP'),'Stop must reach Chrome before a pending progress response returns');
     resolveStatus({ok:true,state});await new Promise(resolve=>setImmediate(resolve));
