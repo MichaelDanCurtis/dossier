@@ -19,7 +19,6 @@ import { JobSearchError, testSource } from "@/lib/job-search";
 import { credentialsFor, jobSearchView, loadJobSearchConfig, requestContext } from "@/lib/job-search/config";
 import { JOB_SOURCES, JSEARCH_HOSTS } from "@/lib/job-search/search";
 import { cancelJob, startJob } from "@/lib/jobs/runner";
-import { checkForUpdate } from "@/lib/update-check";
 import { redirectProblem } from "@/lib/connector/oauth";
 import { countTailoredDocuments, deleteAllDownloads, zipPdfsJob } from "@/lib/jobs/zip-pdfs";
 import { disconnectGoogle } from "@/lib/google/account";
@@ -275,7 +274,6 @@ export const updateSettings = action(
     documentsToWrite: z.enum(DOCUMENTS_TO_WRITE).optional(),
     nightlyBackup: z.boolean().optional(),
     jobRetentionHours: z.number().refine(isJobRetention).optional(),
-    updateCheck: z.boolean().optional(),
   }),
   async (changes) => {
     await saveSettings(changes);
@@ -359,13 +357,6 @@ export const deleteEverything = action(z.object({ confirm: z.literal("DELETE") }
 
   revalidatePath("/", "layout");
   redirect("/");
-});
-
-/** "Check for updates" (E10-9): the latest release, asked for now, and kept for the sidebar's notice. */
-export const checkUpdates = action(z.object({}), async () => {
-  const result = await checkForUpdate();
-  revalidatePath("/", "layout");
-  return result.status === "newer" ? result : { status: result.status };
 });
 
 // Settings → MCP connector (#221, #281). Every connector token carries

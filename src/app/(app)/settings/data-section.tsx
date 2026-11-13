@@ -158,7 +158,7 @@ export function DataSection({
     <>
       <SettingsSectionIntro title="Your data">
         Everything you enter lives in one database on your server, and nothing is sold: there&apos;s no one to sell it to. What leaves it goes to
-        the AI provider and job source you choose, Google if you connect Gmail, and the daily usage ping and update check (see About).
+        the services you connect, including your AI provider, job sources, company boards, Google, GitHub, and LinkedIn. It does not send usage telemetry or fetch upstream surveys, announcements, or release alerts.
       </SettingsSectionIntro>
       <Card padding="none" className="flex flex-col px-7 pt-1.5 pb-2.5">
         <DataRow

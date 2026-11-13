@@ -15,12 +15,10 @@ test("exports, deletes everything and imports it all back", async ({ page }) => 
   await page.getByRole("button", { name: "Delete everything…" }).click();
   await page.getByRole("textbox", { name: "Type DELETE to confirm" }).fill("DELETE");
   await page.getByRole("button", { name: "Delete for good" }).click();
-  // Like a fresh install, it starts with the setup guide (E21), which the usage ping question waits for.
+  // Like a fresh install, it starts with the setup guide (E21).
   await expect(page).toHaveURL("/welcome");
   await page.getByRole("button", { name: "Leave setup" }).click();
   await expect(page).toHaveURL("/");
-  // Delete everything forgets the usage ping's answer too, so it's asked again (#172).
-  await page.getByRole("dialog", { name: "Send a daily usage ping?" }).getByRole("button", { name: "Don't send" }).click();
   await expect(page.getByRole("dialog")).toBeHidden();
   await page.goto("/applications");
   await expect(page.getByRole("heading", { name: "Your first application" })).toBeVisible();

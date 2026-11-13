@@ -1,6 +1,8 @@
 import { z } from "zod";
 
-// What the project's backend answers to GET /announcements, as the app reads
+// Legacy notice-cache data, retained only to read old local settings.
+// CareerAI does not fetch or display upstream announcements.
+// What the project's backend answered to GET /announcements, as the app read
 // it. api-v1.schema.json next to this file is a copy of the backend's contract,
 // as a JSON Schema. The app's reading is looser on purpose, because the API only
 // grows: fields it doesn't know are ignored, an unknown severity counts as

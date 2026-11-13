@@ -4,7 +4,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { resetData, sql } from "./support";
 
 // The setup guide (E21): it opens by itself on a fresh install, walks
-// through each step, and holds the usage ping question back until it's left.
+// through each step, and completes onboarding without upstream prompts.
 // Hosted AI keys aren't checked here: that would reach the vendors.
 test.beforeEach(async () => {
   await resetData();
@@ -73,13 +73,13 @@ test("opens by itself on a fresh install and walks through every step", async ({
   await expect(page.locator("input[type=file]")).toBeAttached();
   await page.getByRole("link", { name: "Skip this step →" }).click();
 
-  // Done: what's set up, and the usage ping question once the guide is behind.
+  // Done: what's set up, with no upstream survey afterward.
   await expect(page.getByRole("heading", { name: "You're all set" })).toBeVisible();
   await expect(page.getByRole("definition").filter({ hasText: "JSearch" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Fill in your profile" })).toBeVisible();
   await page.getByRole("link", { name: "Go to the dashboard" }).click();
   await expect(page).toHaveURL("/");
-  await expect(page.getByRole("dialog", { name: "Send a daily usage ping?" })).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Send a daily usage ping?" })).toHaveCount(0);
 });
 
 test("opens again from Settings, and leaving it goes back to the app for good", async ({ page }) => {

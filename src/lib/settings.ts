@@ -206,8 +206,8 @@ export const settingsSchema = z.object({
   // to the install, not its data, so exports leave them out (INSTALL_SETTINGS).
   startupsViewedAt: z.iso.datetime().nullable().catch(null),
   startupsLastRefresh: json(startupsRefreshSchema).nullable().catch(null),
-  /** "Check for updates daily" in Settings → About (update-check.ts). */
-  updateCheck: flag(true),
+  /** Inert legacy upstream preferences, retained only for existing settings/backups. */
+  updateCheck: flag(false),
   // The newest release the update check has seen, the UTC day it last
   // asked, and the release "Not now" hid the sidebar notice for. They belong
   // to the install, not its data, so exports leave them out (INSTALL_SETTINGS).
@@ -215,7 +215,7 @@ export const settingsSchema = z.object({
   latestVersionUrl: z.string().nullable().catch(null),
   updateCheckDay: z.string().nullable().catch(null),
   updateDismissed: z.string().nullable().catch(null),
-  // The backend's notices (announcements/check.ts): its last answer, and the
+  // Cached legacy upstream notices: their last answer, and the
   // ones dismissed here. They belong to the install, not its data, so exports
   // leave them out (INSTALL_SETTINGS).
   announcementFeed: json(announcementFeedSchema).nullable().catch(null),
@@ -248,7 +248,8 @@ export const settingsSchema = z.object({
   /** Interview length and the gap kept around other meetings, in minutes. */
   slotMinutes: z.coerce.number().int().min(15).max(240).catch(45),
   bufferMinutes: z.coerce.number().int().min(0).max(120).catch(15),
-  // The usage ping (usage-ping.ts): this install's random ID, made by its
+  // Legacy usage-ping preferences, never used for network requests in CareerAI.
+  // This install's old random ID, made by its
   // first ping, and the UTC day of the last one. They belong to the install,
   // not its data, so exports leave them out (INSTALL_SETTINGS).
   usagePingId: z.string().nullable().catch(null),

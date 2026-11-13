@@ -343,8 +343,8 @@ export function AiProviderSection({ initial }: { initial: AiSettingsView }) {
             timeoutProblem
               ? undefined
               : initial.envTimeoutSeconds !== null
-                ? `How long one request may take before Dossier gives up. Empty uses ${fallbackTimeout}, from DOSSIER_AI_TIMEOUT_SECONDS.`
-                : `How long one request may take before Dossier gives up. Empty uses ${fallbackTimeout}, the default for ${option.local ? "a model on your own hardware" : "a hosted model"}.`
+                ? `How long one request may take before CareerAI gives up. Empty uses ${fallbackTimeout}, from DOSSIER_AI_TIMEOUT_SECONDS.`
+                : `How long one request may take before CareerAI gives up. Empty uses ${fallbackTimeout}, the default for ${option.local ? "a model on your own hardware" : "a hosted model"}.`
           }
           onChange={(event) => setTimeoutInput(event.target.value)}
           onBlur={() => void saveTimeout()}

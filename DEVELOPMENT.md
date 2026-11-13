@@ -242,27 +242,12 @@ Per-search history reports **source collection**, not successful AI evaluation: 
 
 The end-to-end specs `e2e/agent.spec.ts` and `e2e/agent-searches.spec.ts` run against the fake JSearch and fake AI, which scores by title (`posting_score` in `e2e/fake-ai.mts`). They cover multiple-search CRUD, cross-tab cap/stale errors, source partial failure, shared quota/score limits, attribution after rename/delete, v8 exports, mobile layout and accessibility. Database tests cover migration/bootstrap, backup round-trips, exclusion/overlap, reservation accounting and schedule deferral. No real source or paid AI requests are needed.
 
-## Usage ping
+## Upstream prompts removed in CareerAI
 
-The usage ping is opt-in. A production server asks once after sign-in (`src/app/(app)/usage-ping-dialog.tsx`, shown by the signed-in layout while nobody has answered and `DOSSIER_TELEMETRY` isn't set) and sends nothing before a yes. After one, on each day someone signed in opens a page, it sends `https://telemetry.dossier.aien.me/ping` the install's random ID and the version, once (`src/lib/usage-ping.ts`, called with `after()` from the signed-in layout). `DOSSIER_TELEMETRY=on` or `off` answers in advance and wins while it's set.
+CareerAI removes the upstream consent survey, usage-ping sender, release checks and remotely supplied announcements. The signed-in layout and server startup do not schedule those requests, and About has no switches or manual update action for them. `DOSSIER_TELEMETRY`, `DOSSIER_API_URL`, `DOSSIER_USAGE_PING_TEST_URL` and `DOSSIER_UPDATES_TEST_BASE_URL` are ignored.
 
-The answer, when it was given and the version of the question's text are the settings `usagePingChoice`, `usagePingChoiceAt` and `usagePingChoiceText`; the ID and the day of the last ping are `usagePingId` and `usagePingDay`. Exports leave them all out and imports keep them (`INSTALL_SETTINGS` in `src/lib/data-export.ts`). A no deletes the ID. When the question's text changes, raise `USAGE_PING_TEXT_VERSION`, and everyone is asked again. Development servers and tests never ask or send it (`NODE_ENV` isn't `production`). The end-to-end run is a production build: `resetData()` answers no, `e2e/usage-ping.spec.ts` asks, and a yes goes to the fake job sources (`DOSSIER_USAGE_PING_TEST_URL`), never the project.
+Legacy settings remain readable for compatibility but have no runtime feature behind them. Exports continue to omit their install-specific rows. The old announcement contract is retained only to decode cached settings. App-shell and About regression tests cover old enabled preferences and cached survey/release content without presenting prompts or sending requests. Upstream updates are integrated through reviewed Git merges.
 
-The receiving end is a small service on the project's own server that isn't published with the app. Change what the ping sends only together with it, the wiki's [Privacy](https://github.com/AienTech/dossier/wiki/Privacy) page and Settings → About.
-
-## Announcements
-
-The project can publish short notices, such as a security fix, and each page shows them in a card over the page (`src/app/(app)/announcement-notice.tsx`), one at a time, until they're dismissed. The sidebar's notice is for updates only. The signed-in layout starts the check after a page load, using the settings it read anyway, so a page costs nothing until a check is due (`src/lib/announcements/check.ts`). When to ask next comes from the answer's `Cache-Control`, between 1 hour and 7 days.
-
-- **The request carries nothing about the install,** only `User-Agent: Dossier`. Which notices apply (version range, expiry, dismissed) is decided on the install (`src/lib/announcements/visible.ts`).
-- **A failure changes nothing:** the last good answer stays, and nothing is shown or logged.
-- **Notices are plain text,** with one optional link, which can go anywhere on the web. Anything but `http` or `https` is dropped, because the link becomes an `href`. This is not a channel for advertising.
-
-The answer and the dismissed IDs are the settings `announcementFeed` and `announcementsDismissed`, which exports leave out and imports keep (`INSTALL_SETTINGS` in `src/lib/data-export.ts`).
-
-The backend is the project's own service and isn't published with the app. `src/lib/announcements/api-v1.schema.json` is a copy of its contract, and a test compares it with what the app reads, so update the copy when the contract grows. The API only grows, so the app ignores what it doesn't know.
-
-A production server asks `https://api.dossier.aien.me/v1`. A development server only asks while `DOSSIER_API_URL` is set, and then on every page, so a change shows without the wait: the first reload asks, and the next one shows it. To try it against a local copy of the backend, set that variable, for example in an untracked `compose.override.yml`. The variable isn't in `.env.example` or `compose.production.yml`, because nobody running the image needs it. `e2e/announcements.spec.ts` points it at the fake job sources.
 ## The desktop app
 
 `desktop/` is the app for Linux and Windows, built with Electron. One download, two modes, chosen on first launch: **On my server** opens the user's own Dossier in a window, and **On this computer** runs Dossier itself. There's no auto-update: people download each new version from the release page.
@@ -305,7 +290,7 @@ GitHub Actions (`.github/workflows/ci.yml`) runs lint, type-check and tests with
 docker/bin/yarn build && docker/bin/yarn test:e2e
 ```
 
-The run starts its own server on port 3100 with a separate `dossier_e2e` database (created and migrated on the way, reset to the demo data before the specs that change data), a fake OpenAI-compatible server on port 3999 (`e2e/fake-ai.mts`) that answers each AI task with plausible output, fake job sources on port 3998 (`e2e/fake-jobs.mts`), which the app reaches through `DOSSIER_JOBS_TEST_BASE_URL`, a variable for the tests only, and a fake Google on port 3997 (`e2e/fake-google.mts`) for sign-in, Gmail and Calendar (`DOSSIER_GOOGLE_TEST_BASE_URL`), which only comes into play once a spec enters an OAuth client in Settings → Google. The daily update check asks the same fake instead of GitHub (`DOSSIER_UPDATES_TEST_BASE_URL`), which says no release is out, so a spec can store the latest release itself, and so does Jev (`DOSSIER_TYPESAFE_TEST_BASE_URL`), with answers made from the questions. The same fake answers for the project's backend (`DOSSIER_API_URL`), with no notices until a spec says otherwise. Your development server and data are never touched: the tests refuse any database whose name doesn't end in `_e2e`. CI runs them in a job of their own and keeps the report of a failed run as an artifact.
+The run starts its own server on port 3100 with a separate `dossier_e2e` database (created and migrated on the way, reset to the demo data before the specs that change data), a fake OpenAI-compatible server on port 3999 (`e2e/fake-ai.mts`) that answers each AI task with plausible output, fake job sources on port 3998 (`e2e/fake-jobs.mts`), which the app reaches through `DOSSIER_JOBS_TEST_BASE_URL`, a variable for the tests only, and a fake Google on port 3997 (`e2e/fake-google.mts`) for sign-in, Gmail and Calendar (`DOSSIER_GOOGLE_TEST_BASE_URL`), which only comes into play once a spec enters an OAuth client in Settings → Google. Jev uses the fake job-source server too (`DOSSIER_TYPESAFE_TEST_BASE_URL`), with answers made from the questions. No upstream prompt or update services are started. Your development server and data are never touched: the tests refuse any database whose name doesn't end in `_e2e`. CI runs them in a job of their own and keeps the report of a failed run as an artifact.
 
 ## The production image
 
