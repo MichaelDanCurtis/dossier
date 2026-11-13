@@ -6,8 +6,9 @@ import type { UsageSink } from "@/lib/usage";
 
 import { AiError, toAiError } from "../errors";
 import type { ChatAnswer, ChatCall } from "../provider";
-import { budgetedAiFetch } from "../request-budget";
+import { budgetedFetch } from "../request-budget";
 import { keyGuardedFetch } from "./guarded-fetch";
+import { timedFetch } from "./timed-fetch";
 import { OpenAICompatibleProvider } from "./openai-compatible";
 
 /** The context CareerAI's prompts need, as for Ollama. */
@@ -51,7 +52,7 @@ export class LmStudioProvider extends OpenAICompatibleProvider {
     const root = address.replace(/\/+$/, "").replace(/(\/api)?\/v1$/, "");
     super("LMSTUDIO", `${root}/v1`, apiKey, model, timeoutMs, onUsage);
     this.root = root;
-    this.api = apiKey ? keyGuardedFetch() : budgetedAiFetch;
+    this.api = apiKey ? keyGuardedFetch(budgetedFetch(timedFetch(timeoutMs))) : budgetedFetch(timedFetch(timeoutMs));
   }
 
   protected override async chat(call: ChatCall): Promise<ChatAnswer> {

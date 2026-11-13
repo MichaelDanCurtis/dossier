@@ -20,6 +20,7 @@ import {
   removeConnectorRedirect,
   listAiModels,
   saveAiProvider,
+  saveAiTimeout,
   saveApiKey,
   saveJobSearchDetails,
   saveJobSource,
@@ -106,8 +107,10 @@ describe("saved AI configurations", () => {
     expect(decryptApiKey((await settings()).apiKeyEnc!)).toBe("router-private-key");
     await saveAiProvider({ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "router-new-model" });
     expect(decryptApiKey((await settings()).apiKeyEnc!)).toBe("router-private-key");
+    await saveAiTimeout({ seconds: 900 });
     await saveAiProvider({ provider: "ANTHROPIC", baseUrl: "https://api.anthropic.com", model: "claude-model" });
     expect(decryptApiKey((await settings()).apiKeyEnc!)).toBe("claude-private-key");
+    expect(await loadAiSettingsView()).toMatchObject({ timeoutSeconds: 900 });
   });
 
   it("only removes the chosen server's key and does not resurrect it when switching back", async () => {
@@ -345,5 +348,26 @@ describe("the MCP connector (#221, #281)", () => {
     expect(await addConnectorRedirect({ uri: "http://localhost:5678/callback" })).toMatchObject({ ok: true, data: { redirects: [n8n, "http://localhost:5678/callback"] } });
     expect((await settings()).connectorRedirects).toEqual([n8n, "http://localhost:5678/callback"]);
     expect(await removeConnectorRedirect({ uri: n8n })).toEqual({ ok: true, data: { redirects: ["http://localhost:5678/callback"] } });
+  });
+});
+
+
+describe("provider server isolation after upstream sync", () => {
+  it("keeps the key for another path or model on its server, and restores it only for the original host (public PR 107)", async () => {
+    await saveAiProvider({ provider: "OPENAI", baseUrl: "https://openrouter.ai/v1", model: "" });
+    await saveApiKey({ provider: "OPENAI", change: { action: "set", value: "sk-or-secret" } });
+    expect(await saveAiProvider({ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "openai/gpt-6.1-terra" })).toEqual({
+      ok: true,
+      data: { keyState: "set" },
+    });
+    expect(decryptApiKey((await settings()).apiKeyEnc!)).toBe("sk-or-secret");
+
+    expect(await saveAiProvider({ provider: "OPENAI", baseUrl: "https://api.deepseek.com", model: "" })).toEqual({
+      ok: true,
+      data: { keyState: "none", keyRemoved: true },
+    });
+    expect((await settings()).apiKeyEnc).toBeNull();
+    // The previous server keeps its encrypted key; it is never lent to the new host.
+    expect(await saveAiProvider({ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "" })).toEqual({ ok: true, data: { keyState: "set" } });
   });
 });

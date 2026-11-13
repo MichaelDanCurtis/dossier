@@ -10,8 +10,8 @@ import { action, ActionError } from "@/lib/action";
 import { lockAgentSearches } from "@/lib/agent/searches";
 import { AiError, createProvider } from "@/lib/ai";
 import { saveAiConnection, saveAiConnectionKey } from "@/lib/ai/connections";
-import { keyStateOf, loadAiConfig, resolveAiConfig } from "@/lib/ai/config";
-import type { KeyState } from "@/lib/ai/provider-options";
+import { keyStateOf, loadAiConfig, resolveAiConfig, sameServer } from "@/lib/ai/config";
+import { AI_TIMEOUT_LIMITS, type KeyState } from "@/lib/ai/provider-options";
 import { DOCUMENT_LANGUAGES } from "@/lib/document-language";
 import { deleteAllBackups } from "@/lib/backups";
 import { env } from "@/lib/env";
@@ -51,13 +51,17 @@ async function currentKeyState(): Promise<KeyState> {
 export const saveAiProvider = action(
   z.object({
     provider: z.enum(AiProvider),
-    // Saved as typed: a half-typed address is harmless, and the connection test explains a wrong one.
+    // Saved as typed: the connection test explains a wrong address; keys stay bound to their saved server.
     baseUrl: z.string().trim().max(500),
     model: z.string().trim().max(200),
   }),
   async ({ provider, baseUrl, model }) => {
+    const current = await loadSettings();
+    const config = resolveAiConfig(current, env);
     await saveAiConnection({ provider, baseUrl, model });
-    return { keyState: await currentKeyState() };
+    const keyState = await currentKeyState();
+    const keyRemoved = config.provider === provider && !sameServer(provider, config.baseUrl, baseUrl) && Boolean(config.apiKey) && keyState === "none";
+    return { keyState, ...(keyRemoved ? { keyRemoved } : {}) };
   },
 );
 
@@ -73,6 +77,19 @@ export const saveApiKey = action(
   }),
   async ({ provider, baseUrl, change }) => {
     return { keyState: await saveAiConnectionKey({ provider, baseUrl }, change) };
+  },
+);
+
+/**
+ * How long one AI request may take, in seconds (public issue 118); null goes
+ * back to DOSSIER_AI_TIMEOUT_SECONDS, or the provider's own. A task started
+ * after the change has it.
+ */
+export const saveAiTimeout = action(
+  z.object({ seconds: z.number().int().min(AI_TIMEOUT_LIMITS.min).max(AI_TIMEOUT_LIMITS.max).nullable() }),
+  async ({ seconds }) => {
+    await saveSettings({ aiTimeoutSeconds: seconds });
+    return { seconds };
   },
 );
 

@@ -4,16 +4,16 @@ import { RadioGroup } from "radix-ui";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
 import { useTrackSave } from "@/components/save-tracker";
-import { toastResult } from "@/components/toast";
+import { toast, toastResult } from "@/components/toast";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
-import { API_KEY_UNREADABLE, PROVIDER_OPTIONS, providerOption, type AiConnectionView, type AiSettingsView } from "@/lib/ai/provider-options";
+import { AI_TIMEOUT_LIMITS, defaultTimeoutSeconds, API_KEY_UNREADABLE, PROVIDER_OPTIONS, providerOption, type AiConnectionView, type AiSettingsView } from "@/lib/ai/provider-options";
 import { cn } from "@/lib/cn";
 import { useAutosave } from "@/hooks/use-autosave";
 
-import { listAiModels, saveAiProvider, saveApiKey, testAiConnection } from "./actions";
+import { listAiModels, saveAiProvider, saveAiTimeout, saveApiKey, testAiConnection } from "./actions";
 import { SettingsSectionIntro } from "./settings-screen";
 
 type Connection =
@@ -56,6 +56,11 @@ export function AiProviderSection({ initial }: { initial: AiSettingsView }) {
   const connections = useRef(new Map<string, AiConnectionView>([...(initial.connections ?? []), initial].map((value) => [connectionId(value), value])));
   const active = useRef({ provider: initial.provider, baseUrl: initial.baseUrl });
   const modelRequest = useRef(0);
+  const [timeoutInput, setTimeoutInput] = useState(initial.timeoutSeconds === null ? "" : String(initial.timeoutSeconds));
+  const [timeoutProblem, setTimeoutProblem] = useState(false);
+  const savedTimeout = useRef(initial.timeoutSeconds);
+  // What an empty Timeout means: the environment's, or the card's own.
+  const fallbackTimeout = initial.envTimeoutSeconds ?? defaultTimeoutSeconds(provider);
 
   const reloadModels = () => {
     const request = ++modelRequest.current;
@@ -93,6 +98,7 @@ export function AiProviderSection({ initial }: { initial: AiSettingsView }) {
       if (active.current.provider !== value.provider || active.current.baseUrl !== value.baseUrl) return result;
       setKeyState(result.data.keyState);
       connections.current.set(connectionId({ ...value, keyState: result.data.keyState }), { ...value, keyState: result.data.keyState });
+      if (result.data.keyRemoved) toast("This server has no saved key. Your previous server's key is still saved; enter a key for this one.");
       // A different server may offer different models.
       const server = `${value.provider} ${value.baseUrl}`;
       if (server !== savedServer.current) {
@@ -145,6 +151,20 @@ export function AiProviderSection({ initial }: { initial: AiSettingsView }) {
     setKeyInput("");
     changed();
     reloadModels();
+  };
+
+  // Public issue 118: empty goes back to the default; anything else is whole seconds within the limits.
+  const saveTimeout = async () => {
+    const typed = timeoutInput.trim();
+    const seconds = typed === "" ? null : Number(typed);
+    if (seconds !== null && !(Number.isInteger(seconds) && seconds >= AI_TIMEOUT_LIMITS.min && seconds <= AI_TIMEOUT_LIMITS.max)) {
+      setTimeoutProblem(true);
+      return;
+    }
+    setTimeoutProblem(false);
+    if (seconds === savedTimeout.current) return;
+    const result = toastResult(await track(saveAiTimeout({ seconds })));
+    if (result.ok) savedTimeout.current = result.data.seconds;
   };
 
   const test = async () => {
@@ -310,6 +330,31 @@ export function AiProviderSection({ initial }: { initial: AiSettingsView }) {
             <p className="py-[11px] text-sm text-muted">Not needed for a local model</p>
           </div>
         )}
+
+        <Input
+          label="Timeout, in seconds"
+          type="text"
+          inputMode="numeric"
+          autoComplete="off"
+          value={timeoutInput}
+          placeholder={String(fallbackTimeout)}
+          error={timeoutProblem ? `A whole number of seconds, from ${AI_TIMEOUT_LIMITS.min} to ${AI_TIMEOUT_LIMITS.max.toLocaleString("en-US")}, or empty for ${fallbackTimeout}.` : undefined}
+          hint={
+            timeoutProblem
+              ? undefined
+              : initial.envTimeoutSeconds !== null
+                ? `How long one request may take before Dossier gives up. Empty uses ${fallbackTimeout}, from DOSSIER_AI_TIMEOUT_SECONDS.`
+                : `How long one request may take before Dossier gives up. Empty uses ${fallbackTimeout}, the default for ${option.local ? "a model on your own hardware" : "a hosted model"}.`
+          }
+          onChange={(event) => setTimeoutInput(event.target.value)}
+          onBlur={() => void saveTimeout()}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              void saveTimeout();
+            }
+          }}
+        />
 
         <div className="flex flex-wrap items-center gap-3.5 pt-1 sm:col-span-2">
           <Button variant="secondary" onClick={() => void test()} disabled={connection.status === "testing"}>

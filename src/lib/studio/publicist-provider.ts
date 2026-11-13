@@ -29,9 +29,10 @@ export async function publicistConnections() {
 export async function publicistConfig(id: string) {
   const active = await loadAiConfig();
   if (!id || id === connectionId(active)) return active;
-  const saved = (await loadSettings()).aiConnections.find((item) => connectionId(item) === id);
+  const settings = await loadSettings();
+  const saved = settings.aiConnections.find((item) => connectionId(item) === id);
   if (!saved) throw new ActionError("This saved AI connection is unavailable. Choose another in Publicist settings.");
-  return resolveAiConfig(saved, env);
+  return resolveAiConfig({ ...saved, aiTimeoutSeconds: settings.aiTimeoutSeconds }, env);
 }
 
 class PublicistCompatibleProvider extends OpenAICompatibleProvider {

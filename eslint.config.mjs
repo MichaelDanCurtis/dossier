@@ -27,6 +27,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // The clickable prototype and its vendored runtime, kept for reference.
     "design/**",
+    // Local experiments and downloaded tools are not application source.
+    "work/**",
     // The HTML coverage report from `yarn test:coverage`.
     "coverage/**",
     // The website, as site/build.sh puts it together.

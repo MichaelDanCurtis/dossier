@@ -2,24 +2,27 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { toast } from "@/components/toast";
 import type { AiSettingsView } from "@/lib/ai/provider-options";
 
-import { listAiModels, saveAiProvider, saveApiKey, testAiConnection } from "./actions";
+import { listAiModels, saveAiProvider, saveAiTimeout, saveApiKey, testAiConnection } from "./actions";
 import { AiProviderSection } from "./ai-provider-section";
 
 vi.mock("./actions", () => ({
   saveAiProvider: vi.fn(),
   saveApiKey: vi.fn(),
+  saveAiTimeout: vi.fn(),
   listAiModels: vi.fn(),
   testAiConnection: vi.fn(),
 }));
 vi.mock("@/components/toast", () => ({ toast: vi.fn(), toastResult: (result: unknown) => result }));
 
-const local: AiSettingsView = { provider: "LOCAL", baseUrl: "http://ollama:11434", model: "qwen2.5:3b", keyState: "none" };
+const local: AiSettingsView = { provider: "LOCAL", baseUrl: "http://ollama:11434", model: "qwen2.5:3b", keyState: "none", timeoutSeconds: null, envTimeoutSeconds: null };
 
 beforeEach(() => {
   vi.mocked(saveAiProvider).mockReset().mockResolvedValue({ ok: true, data: { keyState: "none" } });
   vi.mocked(saveApiKey).mockReset().mockResolvedValue({ ok: true, data: { keyState: "set" } });
+  vi.mocked(saveAiTimeout).mockReset().mockImplementation(async ({ seconds }) => ({ ok: true, data: { seconds } }));
   vi.mocked(listAiModels).mockReset().mockResolvedValue({ ok: true, data: { models: ["llama3.1:8b", "qwen2.5:3b"], problem: null } });
   vi.mocked(testAiConnection).mockReset().mockResolvedValue({ ok: true, data: { connected: true, model: "qwen2.5:3b", seconds: 1.4 } });
 });
@@ -112,6 +115,46 @@ describe("AiProviderSection", () => {
     expect(screen.getByRole("status")).toHaveTextContent("Not tested since your last change");
   });
 
+  it("says when a new address took the saved key (public PR 107)", async () => {
+    vi.mocked(saveAiProvider).mockResolvedValue({ ok: true, data: { keyState: "none", keyRemoved: true } });
+    render(<AiProviderSection initial={{ ...local, provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "", keyState: "set" }} />);
+    await userEvent.clear(screen.getByLabelText("Server address"));
+    await userEvent.type(screen.getByLabelText("Server address"), "https://api.deepseek.com");
+    await userEvent.tab();
+    await waitFor(() => expect(toast).toHaveBeenCalledWith("This server has no saved key. Your previous server's key is still saved; enter a key for this one."));
+    expect(screen.getByLabelText("API key")).toHaveAttribute("placeholder", "Stored encrypted on your server");
+  });
+
+  it("takes a timeout in seconds, empty for the default, which follows the card (public issue 118)", async () => {
+    render(<AiProviderSection initial={local} />);
+    const field = screen.getByLabelText("Timeout, in seconds");
+    expect(field).toHaveAttribute("placeholder", "300");
+    expect(screen.getByText(/Empty uses 300, the default for a model on your own hardware\./)).toBeInTheDocument();
+
+    await userEvent.type(field, "900");
+    await userEvent.tab();
+    await waitFor(() => expect(saveAiTimeout).toHaveBeenCalledWith({ seconds: 900 }));
+
+    await userEvent.clear(field);
+    await userEvent.type(field, "2 minutes");
+    await userEvent.tab();
+    expect(await screen.findByText("A whole number of seconds, from 5 to 3,600, or empty for 300.")).toBeInTheDocument();
+    expect(saveAiTimeout).toHaveBeenCalledTimes(1);
+
+    await userEvent.clear(field);
+    await userEvent.tab();
+    await waitFor(() => expect(saveAiTimeout).toHaveBeenLastCalledWith({ seconds: null }));
+
+    await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
+    expect(field).toHaveAttribute("placeholder", "120");
+  });
+
+  it("says when DOSSIER_AI_TIMEOUT_SECONDS sets the default", () => {
+    render(<AiProviderSection initial={{ ...local, timeoutSeconds: 600, envTimeoutSeconds: 900 }} />);
+    expect(screen.getByLabelText("Timeout, in seconds")).toHaveValue("600");
+    expect(screen.getByText(/Empty uses 900, from DOSSIER_AI_TIMEOUT_SECONDS\./)).toBeInTheDocument();
+  });
+
   it("lets you type a model that isn't listed", async () => {
     render(<AiProviderSection initial={local} />);
     await screen.findByRole("option", { name: "llama3.1:8b" });
@@ -138,7 +181,7 @@ describe("setup provider continuity", () => {
     ["OpenAI", "https://api.openai.com/v1", "gpt-custom"],
   ])("recognizes %s after setup without resetting its endpoint, key or model", async (name, baseUrl, model) => {
     vi.mocked(listAiModels).mockResolvedValue({ ok: true, data: { models: [model, "another-live-model"], problem: null } });
-    render(<AiProviderSection initial={{ provider: "OPENAI", baseUrl, model, keyState: "set" }} />);
+    render(<AiProviderSection initial={{ ...local, provider: "OPENAI", baseUrl, model, keyState: "set" }} />);
     expect(screen.getByRole("radio", { name })).toBeChecked();
     expect(screen.getByLabelText("Server address")).toHaveValue(baseUrl);
     expect(screen.getByLabelText("Model")).toHaveValue(model);
@@ -148,7 +191,7 @@ describe("setup provider continuity", () => {
   });
 
   it("switches between the compatible-server presets without needing a new provider type", async () => {
-    render(<AiProviderSection initial={{ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "custom-chat", keyState: "set" }} />);
+    render(<AiProviderSection initial={{ ...local, provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "custom-chat", keyState: "set" }} />);
     await userEvent.click(screen.getByRole("radio", { name: "Gemini" }));
     await waitFor(() => expect(saveAiProvider).toHaveBeenCalledWith({ provider: "OPENAI", baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai", model: "" }));
   });
@@ -157,7 +200,7 @@ describe("setup provider continuity", () => {
 
 describe("remembered provider configurations", () => {
   it("restores the original endpoint, model and saved-key state after switching away and back", async () => {
-    render(<AiProviderSection initial={{ provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "my-router-model", keyState: "set", connections: [{ provider: "ANTHROPIC", baseUrl: "https://api.anthropic.com", model: "my-claude-model", keyState: "set" }] }} />);
+    render(<AiProviderSection initial={{ ...local, provider: "OPENAI", baseUrl: "https://openrouter.ai/api/v1", model: "my-router-model", keyState: "set", connections: [{ provider: "ANTHROPIC", baseUrl: "https://api.anthropic.com", model: "my-claude-model", keyState: "set" }] }} />);
     vi.mocked(saveAiProvider).mockResolvedValue({ ok: true, data: { keyState: "set" } });
     await userEvent.click(screen.getByRole("radio", { name: "Anthropic" }));
     await waitFor(() => expect(screen.getByLabelText("Model")).toHaveValue("my-claude-model"));
@@ -185,7 +228,7 @@ describe("remembered provider configurations", () => {
 
   it("commits pending model edits before switching, and restores a custom server after reload", async () => {
     const user = userEvent.setup();
-    render(<AiProviderSection initial={{ provider: "OPENAI", baseUrl: "https://custom.example/v1", model: "custom-model", keyState: "set", connections: [{ provider: "MISTRAL", baseUrl: "https://api.mistral.ai/v1", model: "saved-mistral", keyState: "set" }] }} />);
+    render(<AiProviderSection initial={{ ...local, provider: "OPENAI", baseUrl: "https://custom.example/v1", model: "custom-model", keyState: "set", connections: [{ provider: "MISTRAL", baseUrl: "https://api.mistral.ai/v1", model: "saved-mistral", keyState: "set" }] }} />);
     await user.selectOptions(screen.getByLabelText("Model"), "__other");
     await user.clear(screen.getByLabelText("Model name"));
     await user.type(screen.getByLabelText("Model name"), "custom-revised");
