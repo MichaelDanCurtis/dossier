@@ -37,12 +37,12 @@ export function ChromeJobExtension({ available }: { available: boolean }) {
       <ol className="list-inside list-decimal space-y-2 text-sm">
         <li><a download href="/careerai-job-clipper.zip" className="underline">Download the CareerAI Chrome extension</a> and unzip it.</li>
         <li>Open <code>chrome://extensions</code> in Chrome, enable Developer mode, choose <strong>Load unpacked</strong>, and select the unzipped folder containing <code>manifest.json</code>.</li>
-        <li>Pin CareerAI from Chrome’s extensions menu. Generate a workspace pairing code below and paste it into the extension.</li>
-        <li>Open LinkedIn, click the CareerAI toolbar icon, then <strong>Enable / open CareerAI on LinkedIn</strong>. Approve LinkedIn site access once.</li>
+        <li>Pin CareerAI from Chrome’s extensions menu and generate a workspace pairing code below.</li>
+        <li>Open LinkedIn and click the CareerAI toolbar icon. Approve LinkedIn site access once; the workspace opens directly over LinkedIn. Paste your pairing code into the modal.</li>
         <li>Use the CareerAI button at the top right of LinkedIn. Its modal has Jobs, Feed, Messages and Write tabs; there is no separate collection page.</li>
         <li>Collect up to 50 jobs from a search and review career-fit summaries in the modal. Choose which roles get a résumé draft. You submit applications and publish posts yourself.</li>
       </ol>
-      <p className="text-sm text-muted">Already installed? Replace the files in the existing extension folder with this download, then press Reload at <code>chrome://extensions</code> and refresh LinkedIn. Version 0.3.0 adds the in-page workspace. Create a new workspace pairing code to enable feed, messages and AI drafting; older connections remain jobs-only.</p>
+      <p className="text-sm text-muted">Already installed? Replace the files in the existing extension folder with this download, then press Reload at <code>chrome://extensions</code> and refresh LinkedIn. Version 0.3.1 opens the workspace directly from the Chrome icon and includes connection settings inside the modal. Existing workspace connections are kept; older jobs-only connections need a new workspace pairing code for feed, messages and AI drafting.</p>
       <p className="text-xs text-muted">This is a private unpacked extension. Reads start only when you ask and run in a background LinkedIn tab in the same Chrome profile, at least eight seconds apart. Captured text goes to your private account and configured AI provider. The extension has no cookie access or send, apply or publish controls.</p>
     </section>
     {available ? <section className="space-y-4 rounded-panel border border-line-card bg-card p-5">

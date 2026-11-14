@@ -61,21 +61,29 @@ test('security checks pause, old grant scopes refuse, and foreign pages cannot s
 test('packaged workspace contains its worker and modal, without the old collection page',async()=>{
   const {readFile}=await import('node:fs/promises'),{unzipSync,strFromU8}=await import('fflate');
   const zip=unzipSync(await readFile(new URL('../../public/careerai-job-clipper.zip',import.meta.url)));
-  for(const name of ['worker.mjs','panel.js','workspace-engine.mjs','workspace-capture.mjs','api.mjs','search.mjs','extract.mjs'])assert.ok(zip[name],name+' is packaged');
-  assert.equal(JSON.parse(strFromU8(zip['manifest.json'])).version,'0.3.0');assert.equal(zip['collect.html'],undefined);
+  for(const name of ['worker.mjs','launcher.mjs','panel.js','workspace-engine.mjs','workspace-capture.mjs','api.mjs','search.mjs','extract.mjs'])assert.ok(zip[name],name+' is packaged');
+  const manifest=JSON.parse(strFromU8(zip['manifest.json']));
+  assert.equal(manifest.version,'0.3.1');assert.equal(manifest.action.default_popup,undefined);
+  for(const name of ['collect.html','collect.mjs','popup.html','popup.mjs'])assert.equal(zip[name],undefined);
 });
-test('worker refuses foreign senders and page pairing, and never returns its bearer token',async()=>{
+test('worker pairs only its own top-frame panel and never returns its bearer token',async()=>{
   const listeners=[],stored={connection:{token:'DO-NOT-EXPOSE',scope:'workspace',account:'alice',expiresAt:Date.now()+100000}};
   const store={get:async key=>({[key]:stored[key]}),set:async value=>Object.assign(stored,value),setAccessLevel:async()=>{}};
   const event={addListener:()=>{}};
-  globalThis.chrome={storage:{local:store,session:store},runtime:{id:'own-extension',getURL:path=>'chrome-extension://own-extension/'+path,onMessage:{addListener:fn=>listeners.push(fn)},onInstalled:event,onStartup:event},permissions:{contains:async()=>false,onAdded:event,onRemoved:event},scripting:{getRegisteredContentScripts:async()=>[]},tabs:{onUpdated:event}};
+  store.remove=async key=>{delete stored[key];};
+  const fetchBefore=globalThis.fetch,requests=[];
+  globalThis.fetch=async(url,options)=>{requests.push({url,options});return{ok:true,json:async()=>({token:'NEW-PRIVATE-TOKEN',scope:'workspace',account:'alice',expiresAt:Date.now()+100000})};};
+  globalThis.chrome={action:{onClicked:event},storage:{local:store,session:store},runtime:{id:'own-extension',getURL:path=>'chrome-extension://own-extension/'+path,onMessage:{addListener:fn=>listeners.push(fn)},onInstalled:event,onStartup:event},permissions:{contains:async()=>false,onAdded:event,onRemoved:event},scripting:{getRegisteredContentScripts:async()=>[]},tabs:{onUpdated:event}};
   try{
     await import('./worker.mjs?test-worker');const listener=listeners[0];
     assert.equal(listener({type:'STATUS'},{id:'other-extension',url:'https://www.linkedin.com/feed/'},()=>assert.fail()),false);
     const invoke=(message,sender)=>new Promise(resolve=>listener(message,sender,resolve));
-    const refused=await invoke({type:'PAIR',code:'injected'},{id:'own-extension',url:'https://www.linkedin.com/feed/',tab:{id:1}});assert.equal(refused.ok,false);
-    const result=await invoke({type:'STATUS'},{id:'own-extension',url:'https://www.linkedin.com/feed/',tab:{id:1}});assert.equal(result.ok,true);assert.equal(result.state.account,'alice');assert.ok(!JSON.stringify(result).includes('DO-NOT-EXPOSE'));
-  }finally{delete globalThis.chrome;}
+    for(const sender of [{url:'https://www.linkedin.com.evil.test/',frameId:0,tab:{id:1}},{url:'https://www.linkedin.com/feed/',frameId:1,tab:{id:1}},{url:'https://www.linkedin.com/feed/',frameId:0}])assert.equal(listener({type:'PAIR',code:'injected'},{id:'own-extension',...sender},()=>assert.fail()),false);
+    assert.equal(requests.length,0);
+    const sender={id:'own-extension',url:'https://www.linkedin.com/feed/',tab:{id:1},frameId:0};
+    const result=await invoke({type:'STATUS'},sender);assert.equal(result.ok,true);assert.equal(result.state.account,'alice');assert.ok(!JSON.stringify(result).includes('DO-NOT-EXPOSE'));
+    const paired=await invoke({type:'PAIR',code:'fixture-code'},sender);assert.equal(paired.ok,true);assert.equal(stored.connection.token,'NEW-PRIVATE-TOKEN');assert.ok(!JSON.stringify(paired).includes('NEW-PRIVATE-TOKEN'));assert.equal(requests.length,1);assert.equal(requests[0].url,'https://careerai.thecurtis.cloud/api/extension/pair');
+  }finally{delete globalThis.chrome;globalThis.fetch=fetchBefore;}
 });
 test('the in-page Stop remains usable while a progress request is waiting on a slow read',async()=>{
   const {readFile}=await import('node:fs/promises');const code=await readFile(new URL('./panel.js',import.meta.url),'utf8');
@@ -90,5 +98,23 @@ test('the in-page Stop remains usable while a progress request is waiting on a s
     assert.ok(calls.includes('STOP'),'Stop must reach Chrome before a pending progress response returns');
     resolveStatus({ok:true,state});await new Promise(resolve=>setImmediate(resolve));
     root.getElementById('close').click();assert.equal(root.getElementById('veil').hidden,true);assert.equal(root.activeElement,root.getElementById('launcher'));
+  }finally{page.window.close();}
+});
+test('connection setup, pairing, disconnect and keyboard close all stay inside the modal',async()=>{
+  const {readFile}=await import('node:fs/promises');const code=await readFile(new URL('./panel.js',import.meta.url),'utf8');
+  const page=new JSDOM('<body><button id="outside">LinkedIn page</button></body>',{url:'https://www.linkedin.com/feed/',runScripts:'outside-only'});let root;
+  const original=page.window.Element.prototype.attachShadow;page.window.Element.prototype.attachShadow=function(options){root=original.call(this,options);return root;};
+  page.window.setInterval=()=>1;page.window.open=()=>assert.fail('Pairing must not open a controller page');
+  let state={connected:false,pendingJobs:[],opportunities:[],feed:[],inbox:[],thread:[],chat:[]};const calls=[];
+  page.window.chrome={runtime:{onMessage:{addListener:()=>{}},sendMessage:async message=>{calls.push(message);if(message.type==='PAIR')state={...state,connected:true,scope:'workspace',account:'alice'};if(message.type==='DISCONNECT')state={...state,connected:false};return{ok:true,state};}}};
+  const settle=()=>new Promise(resolve=>setImmediate(resolve));
+  try{
+    page.window.eval(code);root.getElementById('launcher').focus();root.getElementById('launcher').click();await settle();
+    assert.equal(root.getElementById('setup').hidden,false);assert.equal(root.getElementById('search').disabled,true);
+    root.getElementById('pair-code').value='fixture-pairing-code';root.getElementById('pair-form').dispatchEvent(new page.window.Event('submit',{cancelable:true}));await settle();await settle();
+    assert.equal(calls.find(call=>call.type==='PAIR').code,'fixture-pairing-code');assert.equal(root.getElementById('pair-code').value,'');assert.equal(root.getElementById('setup').hidden,true);assert.equal(root.getElementById('search').disabled,false);
+    root.getElementById('manage-connection').click();assert.equal(root.getElementById('setup').hidden,false);root.getElementById('disconnect').click();await settle();assert.equal(root.getElementById('search').disabled,true);
+    root.getElementById('pair-code').value='unused-code';root.getElementById('pair-code').dispatchEvent(new page.window.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));
+    assert.equal(root.getElementById('veil').hidden,true);assert.equal(root.getElementById('pair-code').value,'');assert.equal(root.activeElement,root.getElementById('launcher'));
   }finally{page.window.close();}
 });

@@ -1,9 +1,11 @@
 import { careeraiRequest } from './api.mjs';
 import { WorkspaceEngine, linkedinUrl } from './workspace-engine.mjs';
+import { createLauncher } from './launcher.mjs';
 const engine = new WorkspaceEngine({ chromeApi: chrome, api: careeraiRequest });
 let queue = Promise.resolve(), timer;
 const serialized = work => { const result = queue.then(work); queue = result.catch(() => {}); return result; };
 const ownPage = sender => sender.url?.startsWith(chrome.runtime.getURL(''));
+const panelSender = sender => linkedinUrl(sender.url) && Number.isInteger(sender.tab?.id) && sender.frameId === 0;
 async function publicState() {
   const state = await engine.load(), c = (await chrome.storage.local.get('connection')).connection;
   return { ...state, connected: !!c?.token && c.expiresAt > Date.now(), scope: c?.scope || 'jobs', account: c?.account || '' };
@@ -22,13 +24,19 @@ async function tick() {
   const state = await engine.load();
   if (state.run?.status === 'running' || state.pendingJobs?.length) timer = setTimeout(() => serialized(tick).catch(() => {}), 1200);
 }
+const launcher = createLauncher(chrome, register);
+chrome.action.onClicked.addListener(tab => {
+  // Request immediately inside Chrome's user gesture, before queuing any work.
+  const permission = chrome.permissions.request({ origins: ['https://www.linkedin.com/*'] }).catch(() => false);
+  serialized(() => launcher.launch(tab, permission)).catch(error => launcher.report(error)).catch(() => {});
+});
 chrome.runtime.onInstalled.addListener(() => serialized(register));
 chrome.runtime.onStartup.addListener(() => serialized(async () => { await register(); await tick(); }));
 chrome.permissions.onAdded.addListener(() => serialized(register));
 chrome.permissions.onRemoved.addListener(() => { engine.stopRequested = true; serialized(async () => { await engine.stop('LinkedIn site access was removed.'); await register(); }); });
-chrome.tabs.onUpdated.addListener((_id, change) => { if (change.status === 'complete') serialized(tick).catch(() => {}); });
+chrome.tabs.onUpdated.addListener((id, change) => { if (change.status === 'complete') serialized(async () => { await launcher.ready(id).catch(error => launcher.report(error)); await tick(); }).catch(() => {}); });
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
-  if (sender.id !== chrome.runtime.id || !(ownPage(sender) || linkedinUrl(sender.url)) || !message || typeof message !== 'object') return false;
+  if (sender.id !== chrome.runtime.id || !(ownPage(sender) || panelSender(sender)) || !message || typeof message !== 'object') return false;
   if (message.type === 'STOP') engine.stopRequested = true;
   serialized(async () => {
     switch (message.type) {
@@ -49,14 +57,13 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
         await chrome.tabs.sendMessage(tab.id, { type: 'CAREERAI_OPEN' }); break;
       }
       case 'PAIR': {
-        if (!ownPage(sender)) throw new Error('Pair from the CareerAI toolbar button.');
         const code = typeof message.code === 'string' ? message.code.trim() : '';
         if (!code || code.length > 64) throw new Error('Enter your pairing code.');
         const connection = await careeraiRequest('/api/extension/pair', { code });
+        await engine.stop();
         await chrome.storage.local.set({ connection }); await chrome.storage.session.remove('workspace'); break;
       }
       case 'DISCONNECT': {
-        if (!ownPage(sender)) throw new Error('Disconnect from the CareerAI toolbar button.');
         await engine.stop(); const c = await engine.connection(); await careeraiRequest('/api/extension/revoke', {}, c.token);
         await chrome.storage.local.remove('connection'); await chrome.storage.session.remove('workspace'); break;
       }

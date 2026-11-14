@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "CareerAI \u2014 LinkedIn workspace",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Your private career workspace inside LinkedIn: collect roles, review feed and message excerpts, and draft with AI.",
   "permissions": [
     "activeTab",
@@ -13,7 +13,6 @@
   ],
   "action": {
     "default_title": "Open CareerAI on LinkedIn",
-    "default_popup": "popup.html",
     "default_icon": {
       "128": "icon.png"
     }
