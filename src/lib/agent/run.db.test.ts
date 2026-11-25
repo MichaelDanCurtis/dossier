@@ -16,6 +16,7 @@ import { evaluateAgentPostings, runAgentScan } from "./run";
 import { foundFromPosting } from "@/lib/postings";
 import { saveAgentSearch, listAgentSearches } from "./searches";
 import { reserveRun } from "./runs";
+import { alertReviewJob } from "@/lib/job-alerts/review";
 import { scoreLinkedinJob } from "@/lib/studio/linkedin-job";
 import { importLinkedinOpportunity } from "@/lib/linkedin-import";
 
@@ -125,6 +126,20 @@ afterAll(() => prisma().$disconnect());
 
 describe("reviewing saved LinkedIn opportunities", () => {
   const imported = (id: string) => importLinkedinOpportunity({ url: `https://www.linkedin.com/jobs/view/${id}/`, title: "Senior Product Designer", company: `Company ${id}`, place: "Rotterdam", remote: false, salary: "", text: "Design useful products and lead a team. Work closely with engineers and researchers. ".repeat(3) });
+
+  it("limits alert review across retries, even after job history is swept or the monitor is re-enabled", async () => {
+    await saveSettings({ agentAutoDraft: true, agentMaxScores: 1 });
+    for (const id of ["12345", "12346"]) {
+      const posting = await imported(id);
+      await prisma().jobAlertLead.create({ data: { linkedinUrl: posting.url, received: now, title: posting.title } });
+    }
+    await prisma().jobAlertMonitor.create({ data: { id: "linkedin", enabled: true, mailbox: "fixture@example.org", labelId: "INBOX", labelName: "Inbox", revision: "fixture", nextCheckAt: now } });
+    expect(await alertReviewJob.run({}, context())).toMatchObject({ scored: 1, drafted: 0 });
+    await prisma().job.deleteMany();
+    await prisma().jobAlertMonitor.update({ where: { id: "linkedin" }, data: { revision: "re-enabled" } });
+    expect(await alertReviewJob.run({}, context())).toMatchObject({ scored: 0, drafted: 0 });
+    expect(await prisma().application.count()).toBe(0);
+  });
 
   it("scores an imported saved job, persists its explanation and never starts an application", async () => {
     await imported("12345");
