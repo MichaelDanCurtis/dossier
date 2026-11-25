@@ -198,7 +198,7 @@ test("all searches share scores/quota, retain partial source results and immutab
   const response = await page.request.get("/api/export");
   expect(response.ok()).toBe(true);
   const exported = await response.json();
-  expect(exported.schemaVersion).toBe(11);
+  expect(exported.schemaVersion).toBe(13);
   expect(exported.agentSearches.map((search: { name: string }) => search.name)).toEqual(["New design name", "Unavailable"]);
   expect(exported.agentCandidateSearches).toHaveLength(4);
   expect(exported.agentCandidateSearches.filter((link: { searchId: string | null }) => link.searchId === null)).toEqual([
