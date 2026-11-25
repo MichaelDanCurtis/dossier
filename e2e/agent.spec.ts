@@ -34,7 +34,7 @@ test("finds, scores, drafts and dismisses, and never brings a posting back", asy
   await page.getByRole("button", { name: "Run all now" }).click();
   await expect(page.getByText("2 new postings are waiting for a look.").first()).toBeVisible({ timeout: 30_000 });
   expect(await fakeJobSearches()).toBe(searches + 1);
-  const scored = page.getByRole("region", { name: "Scored postings" });
+  const scored = page.getByRole("region", { name: "Morning shortlist" });
   await expect(scored.getByRole("heading", { level: 3 })).toHaveText(["Senior Product Designer, Payments", "Product Designer, Logistics"]);
   await expect(card(page, "Senior Product Designer, Payments").getByRole("img", { name: "Score 91 of 100" })).toBeVisible();
   // The one below the minimum score waits behind Show.

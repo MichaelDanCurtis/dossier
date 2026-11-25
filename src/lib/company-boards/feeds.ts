@@ -17,9 +17,11 @@ export type FeedRequest = (url: string, headers?: Record<string, string>) => Pro
 export const requestFeed: FeedRequest = (address, headers = {}) => new Promise((resolve, reject) => {
   const url = new URL(address);
   if (url.protocol !== "https:" || !["boards-api.greenhouse.io", "api.lever.co", "api.eu.lever.co", "api.ashbyhq.com"].includes(url.hostname) || url.port || url.username || url.password) return reject(new Error("Unsupported company feed address."));
+  // Ashby includes full HTML, plain text and compensation for every role in one response.
+  const limitMiB = url.hostname === "api.ashbyhq.com" ? 32 : 12;
   const request = https.get(url, { lookup: guardedLookup, headers: { accept: "application/json", "user-agent": "Dossier-company-watchlist/1.0", ...headers }, signal: AbortSignal.timeout(30000) }, (response) => {
     const chunks: Buffer[] = []; let bytes = 0;
-    response.on("data", (chunk: Buffer) => { bytes += chunk.length; if (bytes > 12 * 1024 * 1024) response.destroy(new Error("The company feed exceeded the 12 MiB response limit.")); else chunks.push(chunk); });
+    response.on("data", (chunk: Buffer) => { bytes += chunk.length; if (bytes > limitMiB * 1024 * 1024) response.destroy(new Error(`The company feed exceeded the ${limitMiB} MiB response limit.`)); else chunks.push(chunk); });
     response.on("error", reject);
     response.on("end", () => {
       try {
@@ -45,7 +47,7 @@ const base = (board: BoardInput, id: string, title: string, place: string, url: 
 
 const greenhouseJob = z.object({ id: z.number().int(), internal_job_id: z.number().int().nullable(), title: z.string(), location: z.object({ name: z.string() }), absolute_url: link, updated_at: z.string(), content: z.string().optional() });
 const leverJob = z.object({ id: z.string().min(1), text: z.string(), categories: z.object({ location: z.string().nullish() }), hostedUrl: link, applyUrl: link, workplaceType: z.string().optional(), createdAt: z.number().optional(), descriptionPlain: z.string().optional(), description: z.string().optional(), lists: z.array(z.object({ text: z.string(), content: z.string() })).optional(), additionalPlain: z.string().optional(), additional: z.string().optional(), salaryRange: z.object({ currency: z.string(), interval: z.string(), min: z.number(), max: z.number() }).optional() });
-const ashbyJob = z.object({ title: z.string(), location: z.string(), jobUrl: link, applyUrl: link, isListed: z.boolean(), isRemote: z.boolean().optional(), workplaceType: z.string().optional(), descriptionPlain: z.string().optional(), descriptionHtml: z.string().optional(), publishedAt: z.string().optional(), compensation: z.object({ scrapeableCompensationSalarySummary: z.string().optional(), compensationTierSummary: z.string().optional() }).optional() });
+const ashbyJob = z.object({ title: z.string(), location: z.string(), jobUrl: link, applyUrl: link, isListed: z.boolean(), isRemote: z.boolean().nullish(), workplaceType: z.string().nullish(), descriptionPlain: z.string().nullish(), descriptionHtml: z.string().nullish(), publishedAt: z.string().nullish(), compensation: z.object({ scrapeableCompensationSalarySummary: z.string().nullish(), compensationTierSummary: z.string().nullish() }).nullish() });
 
 export function metadataUrl(board: BoardInput): string {
   if (board.platform === "greenhouse") return `https://boards-api.greenhouse.io/v1/boards/${board.boardToken}/jobs`;

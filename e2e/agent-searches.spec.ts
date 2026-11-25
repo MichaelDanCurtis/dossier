@@ -20,6 +20,7 @@ async function addSearch(page: Page, name: string, keywords = "Agent browser des
 const names = () => sql<{ id: string; name: string; enabled: boolean }>(`SELECT id, name, enabled FROM "AgentSearch" ORDER BY sort, "createdAt", id`);
 
 async function accessible(page: Page) {
+  await page.emulateMedia({ reducedMotion: "reduce" });
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"]).analyze();
   expect(violations.filter(({ impact }) => impact === "serious" || impact === "critical")).toEqual([]);
 }
@@ -126,6 +127,7 @@ test("a stale tab toggles only enabled and validates the current query's country
   await other.getByRole("button", { name: "Move down: Renamed elsewhere", exact: true }).click();
   await expect(other.getByRole("button", { name: "Move down: Renamed elsewhere", exact: true })).toBeDisabled();
   const currentRow = () => sql(`SELECT id, name, query, sort, enabled FROM "AgentSearch" WHERE id = $1`, [original.id]);
+  await expect.poll(async () => (await currentRow())[0]?.sort).toBe(1);
   const [edited] = await currentRow();
   expect(edited).toMatchObject({ name: "Renamed elsewhere", query: { keywords: "Engineer", place: "Utrecht", country: "nl" }, sort: 1, enabled: true });
 
@@ -168,7 +170,7 @@ test("all searches share scores/quota, retain partial source results and immutab
   await expect(page.getByRole("button", { name: "Run all now", exact: true })).toBeVisible();
   expect(await fakeJobSearches()).toBe(before + 3);
   await expect(page.getByText("0 of 3 in the rolling 24-hour budget", { exact: true })).toBeVisible();
-  await expect(page.getByText("Scored postings", { exact: true })).toBeVisible();
+  await expect(page.getByText("Morning shortlist", { exact: true })).toBeVisible();
   expect(await sql(`SELECT count(*)::int AS count FROM "AgentCandidate"`)).toEqual([{ count: 2 }]);
   expect(await sql(`SELECT "searchName", count(*)::int AS count FROM "AgentCandidateSearch" GROUP BY "searchName" ORDER BY "searchName"`)).toEqual([{ searchName: "Design", count: 2 }, { searchName: "Overlap", count: 2 }]);
   await expect(page.getByText(/Unavailable: 0 found · 0 new to agent · Source request failed/)).toBeVisible();
@@ -191,7 +193,7 @@ test("all searches share scores/quota, retain partial source results and immutab
   await page.goto("/agent");
   await expect(page.getByText("Run as “Design”", { exact: true })).toBeVisible();
   await expect(page.getByText(/Overlap \(deleted search\): 3 found/)).toBeVisible();
-  const scored = page.getByRole("region", { name: "Scored postings" });
+  const scored = page.getByRole("region", { name: "Morning shortlist" });
   await expect(scored.getByText("Found by: Design · Overlap (deleted search)", { exact: true })).toHaveCount(2);
   const response = await page.request.get("/api/export");
   expect(response.ok()).toBe(true);

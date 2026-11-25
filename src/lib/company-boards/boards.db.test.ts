@@ -96,6 +96,8 @@ describe("bounded company watchlists", () => {
     const job = { title: "Engineer", location: "London", jobUrl: "https://jobs.ashbyhq.com/fixture/one", applyUrl: "https://jobs.ashbyhq.com/fixture/one/application", isListed: true, isRemote: true, descriptionPlain: "Full job description" };
     const result = await fetchBoardListing(ashby, {}, async () => response({ jobs: [job, { ...job, jobUrl: "https://jobs.ashbyhq.com/fixture/two", isListed: false }] }));
     expect(result.listings).toHaveLength(1);
+    const unknown = await fetchBoardListing(ashby, {}, async () => response({ jobs: [{ ...job, isRemote: null, workplaceType: null, compensation: null }] }));
+    expect(unknown.listings?.[0].posting.remote).toBeNull();
     expect(result.listings![0].posting.externalId).toMatch(/^ashby:global:fixture:[a-f0-9]{64}$/);
     expect(result.listings![0].posting.remote).toBe(true);
   });
