@@ -36,6 +36,7 @@ export function AgentScreen({ view }: { view: AgentView }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [runJobId, setRunJobId] = useState(view.runJobId);
+  const [showAll, setShowAll] = useState(false);
   const [showBelow, setShowBelow] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [confirming, setConfirming] = useState<AgentCandidateView | null>(null);
@@ -195,18 +196,19 @@ export function AgentScreen({ view }: { view: AgentView }) {
           )}
         </Section>
 
-        <Section title="Scored postings" count={scored.length}>
+        <Section title="Morning shortlist" count={scored.length}>
           {scored.length === 0 ? (
             <Empty>{empty ? "Nothing waiting yet. A run puts the postings that fit you best here." : "No postings waiting for a draft."}</Empty>
           ) : (
             <ul className="flex flex-col gap-3">
-              {scored.map((candidate) => (
+              {(showAll ? scored : scored.slice(0, 5)).map((candidate) => (
                 <li key={candidate.id}>
                   <ScoredCard candidate={candidate} onDismiss={() => dismiss(candidate)} />
                 </li>
               ))}
             </ul>
           )}
+          {scored.length > 5 && <Button size="sm" variant="text" onClick={() => setShowAll(!showAll)}>{showAll ? "Show top five" : "Show all scored roles"}</Button>}
           {below.length > 0 && (
             <div className="flex flex-col gap-3">
               <button type="button" aria-expanded={showBelow} onClick={() => setShowBelow(!showBelow)} className="w-fit text-meta text-muted underline underline-offset-2 hover:text-ink">
@@ -322,6 +324,7 @@ function CandidateCard({ candidate, children }: { candidate: AgentCandidateView;
           {candidate.company && <p className="text-sm text-ink">{candidate.company}</p>}
           {candidate.facts && <p className="text-meta text-muted">{candidate.facts}</p>}
           {candidate.origin && <p className="text-xs text-muted">{candidate.origin}</p>}
+          {candidate.alertUrls?.map(url => <a key={url} className="text-xs underline" href={url} target="_blank" rel="noreferrer">Found in a LinkedIn alert</a>)}
           {candidate.searches.length > 0 && <p className="text-xs text-muted break-words">Found by: {candidate.searches.map((search) => `${search.searchName}${search.searchId === null ? " (deleted search)" : ""}`).join(" · ")}</p>}
           {/* As the source's terms ask (E14-2); the origin names the others. */}
           {linksAttribution(candidate.source) && <SourceAttribution source={candidate.source} url={candidate.url} className="mt-1.5 self-start" />}

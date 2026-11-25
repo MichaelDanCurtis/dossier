@@ -121,7 +121,7 @@ describe("AgentScreen (E16-6)", () => {
 
   it("lists scored postings best first, with reasons, red flags, a failed draft's error and the posting's link", () => {
     open();
-    const scored = screen.getByRole("region", { name: "Scored postings" });
+    const scored = screen.getByRole("region", { name: "Morning shortlist" });
     expect(within(scored).getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual(["Posting s1", "Posting s2"]);
     expect(within(scored).getAllByRole("list", { name: "Why it fits" })[0]).toHaveTextContent("Reason for s1");
     expect(within(scored).getByText("German required")).toBeInTheDocument();
@@ -134,7 +134,7 @@ describe("AgentScreen (E16-6)", () => {
 
   it("labels Adzuna's postings with a link to Adzuna, as its terms ask", () => {
     open({ scored: [card("s1", 84, { source: "ADZUNA", url: "https://www.adzuna.nl/land/ad/1" }), card("s2", 72)] });
-    const scored = screen.getByRole("region", { name: "Scored postings" });
+    const scored = screen.getByRole("region", { name: "Morning shortlist" });
     expect(within(scored).getByRole("link", { name: "Jobs by Adzuna (opens in a new tab)" })).toHaveAttribute("href", "https://www.adzuna.nl");
   });
 
@@ -162,7 +162,7 @@ describe("AgentScreen (E16-6)", () => {
     const undo = { id: "s2", place: "Rotterdam", remote: false, salary: "", postedAt: null, url: "https://jobs.example/s2", via: "", description: "Text", complete: true, reasons: ["Reason for s2"], redFlags: [] };
     vi.mocked(dismissAgentCandidate).mockResolvedValueOnce({ ok: true, data: { undo } });
     open();
-    const scored = screen.getByRole("region", { name: "Scored postings" });
+    const scored = screen.getByRole("region", { name: "Morning shortlist" });
     await user.click(within(scored).getAllByRole("button", { name: "Dismiss" })[1]);
     expect(dismissAgentCandidate).toHaveBeenCalledWith({ candidateId: "s2" });
     await waitFor(() => expect(screen.queryByText("Posting s2")).not.toBeInTheDocument());

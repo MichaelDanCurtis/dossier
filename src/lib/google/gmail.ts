@@ -154,3 +154,34 @@ export async function searchMessages(query: string, { max = 100, signal }: { max
   const page = await googleFetch<{ messages?: { id: string }[] }>("read", url, { signal, retry: true });
   return (page.messages ?? []).map((message) => message.id);
 }
+
+/** Only the alert reader needs HTML anchors. Ordinary inbox sync still receives text only. */
+export async function getAlertBody(id: string, labelId: string, signal?: AbortSignal) {
+  try {
+    const message = messageSchema.parse(await googleFetch("read", api(`/messages/${encodeURIComponent(id)}?format=full`), { signal, retry: true }));
+    const sender = header(message.payload, "From").trim();
+    if (!message.labelIds.includes(labelId) || !/^(?:(?:[^<>]*<)(?:jobalerts-noreply|jobs-noreply)@linkedin\.com>|(?:jobalerts-noreply|jobs-noreply)@linkedin\.com)$/i.test(sender)) return null;
+    const html = findPart(message.payload, "text/html");
+    const plain = findPart(message.payload, "text/plain");
+    const received = new Date(message.internalDate ? Number(message.internalDate) : header(message.payload, "Date"));
+    if (!Number.isFinite(received.getTime())) return null;
+    return { received, html: html ? decodeBody(html.body!.data!) : "", plain: plain ? decodeBody(plain.body!.data!) : "" };
+  } catch (error) {
+    if (isGone(error)) return null;
+    throw error;
+  }
+}
+
+export async function alertLabels() {
+  const result = await googleFetch<{ labels: { id: string; name: string }[] }>("read", api("/labels"));
+  return result.labels;
+}
+
+export async function listAlertPage(labelId: string, after: number, before: number, pageToken?: string, signal?: AbortSignal) {
+  const url = new URL(api("/messages"));
+  url.searchParams.set("labelIds", labelId);
+  url.searchParams.set("q", `{from:jobalerts-noreply@linkedin.com from:jobs-noreply@linkedin.com} after:${after} before:${before}`);
+  url.searchParams.set("maxResults", "50");
+  if (pageToken) url.searchParams.set("pageToken", pageToken);
+  return googleFetch<{ messages?: { id: string }[]; nextPageToken?: string }>("read", url, { retry: true, signal });
+}

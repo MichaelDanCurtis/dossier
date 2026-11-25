@@ -1242,3 +1242,36 @@ model CompanyPosting {
   @@index([urlKey])
   @@index([boardId, needsDetails, detailRetryAt])
 }
+
+/// Per private workspace, independent from employer-reply mailbox history.
+model JobAlertMonitor {
+  id          String @id
+  mailbox     String
+  labelId     String
+  labelName   String
+  enabled     Boolean @default(true)
+  revision    String
+  checkedAt   DateTime?
+  lastAlertAt DateTime?
+  nextCheckAt DateTime
+  problem     String?
+}
+
+model JobAlertReceipt {
+  mailbox   String
+  messageId String
+  received  DateTime
+  count     Int
+  @@id([mailbox, messageId])
+}
+
+model JobAlertLead {
+  linkedinUrl String @id
+  title       String
+  company     String @default("")
+  employerUrl String @default("")
+  boardRowId  String?
+  received    DateTime
+  passed      Boolean @default(false)
+  @@index([received])
+}

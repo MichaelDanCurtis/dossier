@@ -21,6 +21,7 @@ import { isAgentScanRunning } from "./scan-lock";
 // What the Agent screen shows (E16-6).
 
 export type AgentCandidateView = {
+  alertUrls?: string[];
   /** Historical names survive renames/deletion; searchId can be null. */
   searches: { searchId: string | null; searchName: string }[];
   id: string;

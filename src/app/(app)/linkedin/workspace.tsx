@@ -10,15 +10,16 @@ import { LinkedinJobReview, type LinkedinReviewProps } from "./job-review";
 import { importLinkedinJob } from "./actions";
 
 const control = "mt-2 block w-full rounded-control border border-line-input bg-input px-3 py-2";
-export function LinkedinWorkspace(props: LinkedinReviewProps) {
-  const [draft, setDraft] = useState({ url: "", title: "", company: "", place: "", remote: false, salary: "", text: "" });
+type AlertPrefill = { linkedinUrl: string; company: string; title: string };
+export function LinkedinWorkspace({ alert, ...props }: LinkedinReviewProps & { alert?: AlertPrefill | null }) {
+  const [draft, setDraft] = useState({ url: alert?.linkedinUrl ?? "", title: alert?.title === "LinkedIn opportunity" ? "" : alert?.title ?? "", company: alert?.company ?? "", place: "", remote: false, salary: "", text: "" });
   const [busy, start] = useTransition(); const router = useRouter();
   return <div className="space-y-6">
     <LinkedinJobReview {...props} />
-    <details className="rounded-panel border border-line-card bg-card p-5">
+    <details id="paste-job" open={alert ? true : undefined} className="rounded-panel border border-line-card bg-card p-5">
       <summary className="cursor-pointer font-medium">Paste a job manually</summary>
       <p className="mt-3 text-sm text-muted">Paste the full description and its LinkedIn link. You can also save jobs through your normal Chrome browser using the extension. LinkedIn cookies stay in Chrome.</p>
-      <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); start(async () => { const result = toastResult(await importLinkedinJob(draft)); if (result.ok) { setDraft({ url: "", title: "", company: "", place: "", remote: false, salary: "", text: "" }); router.refresh(); } }); }}>
+      <form className="mt-5 grid gap-4 sm:grid-cols-2" onSubmit={(event) => { event.preventDefault(); start(async () => { const result = toastResult(await importLinkedinJob(draft)); if (result.ok) { setDraft({ url: "", title: "", company: "", place: "", remote: false, salary: "", text: "" }); if (alert) router.push("/agent"); else router.refresh(); } }); }}>
         <label className="text-sm sm:col-span-2">LinkedIn job link<input className={control} required type="url" value={draft.url} maxLength={2000} placeholder="https://www.linkedin.com/jobs/view/123456789/" onChange={(event) => setDraft({ ...draft, url: event.target.value })} /></label>
         <label className="text-sm">Role<input className={control} required value={draft.title} maxLength={500} onChange={(event) => setDraft({ ...draft, title: event.target.value })} /></label>
         <label className="text-sm">Company<input className={control} required value={draft.company} maxLength={300} onChange={(event) => setDraft({ ...draft, company: event.target.value })} /></label>

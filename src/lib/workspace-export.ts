@@ -7,6 +7,7 @@ import { applicationPackageSchema } from "@/lib/application-package";
 import { isPhotoDataUrl, PHOTO_MAX_LENGTH } from "@/lib/photo";
 import { variantSelectionSchema, variantOverridesSchema } from "@/lib/resume-variants";
 import { lockForTransaction } from "@/lib/db-lock";
+import { employerLink } from "@/lib/job-alerts/parse";
 import { recordHash } from "@/lib/record-hash";
 
 const text = z.string();
@@ -29,11 +30,16 @@ export const workspaceExportSchema = z.object({
   career: z.object({ sessions: z.array(session), messages: z.array(message), proposals: z.array(proposal) }),
   resumes: z.object({ variants: z.array(variant), versions: z.array(variantVersion), packages: z.array(packageSnapshot), events: z.array(packageEvent), photoAssets: z.array(z.object({ hash: text.regex(/^[a-f0-9]{64}$/), src: text.max(PHOTO_MAX_LENGTH).refine(isPhotoDataUrl) })).default([]) }),
   companyBoards: z.array(board),
+  alertLeads: z.array(z.object({
+    linkedinUrl: text.regex(/^https:\/\/www\.linkedin\.com\/jobs\/view\/\d+\/$/),
+    title: text.max(500), company: text.max(300), received: date, passed: z.boolean(),
+    employerUrl: text.refine(value => value === "" || employerLink(value) === value),
+  })).optional(),
 });
 export type WorkspaceExport = z.infer<typeof workspaceExportSchema>;
 
 export async function buildWorkspaceExport(tx: Prisma.TransactionClient): Promise<WorkspaceExport> {
-  const [sessions, messages, proposals, variants, versions, packages, events, companyBoards] = await Promise.all([
+  const [sessions, messages, proposals, variants, versions, packages, events, alertLeads, companyBoards] = await Promise.all([
     tx.careerSession.findMany({ orderBy: { createdAt: "asc" } }),
     tx.careerMessage.findMany({ omit: { jobId: true }, orderBy: [{ sessionId: "asc" }, { ordinal: "asc" }] }),
     tx.careerProposal.findMany({ orderBy: { createdAt: "asc" } }),
@@ -41,6 +47,7 @@ export async function buildWorkspaceExport(tx: Prisma.TransactionClient): Promis
     tx.resumeVariantVersion.findMany({ orderBy: { createdAt: "asc" } }),
     tx.applicationPackageSnapshot.findMany({ orderBy: { createdAt: "asc" } }),
     tx.applicationPackageEvent.findMany({ orderBy: { createdAt: "asc" } }),
+    tx.jobAlertLead.findMany({ omit: { boardRowId: true }, orderBy: { linkedinUrl: "asc" } }),
     tx.companyBoard.findMany({ select: { id: true, platform: true, region: true, boardToken: true, company: true, enabled: true, intervalHours: true, createdAt: true, updatedAt: true }, orderBy: { createdAt: "asc" } }),
   ]);
   // Validate on serialization too, so corrupt history cannot become an un-restorable backup.
@@ -56,7 +63,7 @@ export async function buildWorkspaceExport(tx: Prisma.TransactionClient): Promis
     }
     return { ...row, snapshotJson: JSON.stringify(snapshot) };
   });
-  return workspaceExportSchema.parse(JSON.parse(JSON.stringify({ career: { sessions, messages, proposals }, resumes: { variants, versions, packages: compact, events, photoAssets: [...photos].map(([hash, src]) => ({ hash, src })) }, companyBoards })));
+  return workspaceExportSchema.parse(JSON.parse(JSON.stringify({ career: { sessions, messages, proposals }, resumes: { variants, versions, packages: compact, events, photoAssets: [...photos].map(([hash, src]) => ({ hash, src })) }, companyBoards, alertLeads })));
 }
 
 export async function clearWorkspace(tx: Prisma.TransactionClient): Promise<void> {
@@ -65,6 +72,9 @@ export async function clearWorkspace(tx: Prisma.TransactionClient): Promise<void
   await tx.careerSession.deleteMany();
   await tx.resumeVariant.deleteMany();
   await tx.applicationPackageSnapshot.deleteMany();
+  await tx.jobAlertMonitor.deleteMany();
+  await tx.jobAlertLead.deleteMany();
+  await tx.jobAlertReceipt.deleteMany();
   await tx.companyBoard.deleteMany();
 }
 
@@ -92,4 +102,5 @@ export async function restoreWorkspace(tx: Prisma.TransactionClient, input: Work
   await tx.applicationPackageEvent.createMany({ data: input.resumes.events });
   // No validator, snapshot, lease, missing counter or enrichment cursor crosses an import.
   await tx.companyBoard.createMany({ data: input.companyBoards });
+  if (input.alertLeads?.length) await tx.jobAlertLead.createMany({ data: input.alertLeads });
 }

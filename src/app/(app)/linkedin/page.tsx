@@ -32,6 +32,9 @@ export default async function LinkedinPage({ searchParams }: PageProps<"/linkedi
     searchParams, headers(),
     findLatestJob(LINKEDIN_CAREER_REVIEW_KEY), loadSettings(), isAiConfigured(), loadAiSettingsView(),
   ]);
+  const alert = typeof params.alert === "string" && params.alert.length < 2000
+    ? await prisma.jobAlertLead.findUnique({ where: { linkedinUrl: params.alert }, select: { linkedinUrl: true, company: true, title: true } })
+    : null;
   const linkedinPostings = postings.filter(posting => posting.source === "LINKEDIN");
   const [reviewView, timeZone] = await Promise.all([linkedinReviewView(linkedinPostings), lastKnownTimeZone()]);
   const batch = params.batch === undefined ? null : linkedinReviewInput.safeParse({ postingIds: typeof params.batch === "string" ? params.batch.split(",") : [], force: false });
@@ -44,7 +47,7 @@ export default async function LinkedinPage({ searchParams }: PageProps<"/linkedi
     <LinkedinTabs
       extension={<ChromeJobExtension available={process.env.DOSSIER_ACCOUNT_GATEWAY === "on"} />}
       browser={<LinkedinBrowserBridge configured={bridgeConfigured()} />}
-      jobs={<LinkedinWorkspace postings={linkedinPostings} {...reviewView} timeZone={timeZone} today={new Date().toISOString()} reviewLimit={Math.min(10, settings.agentMaxScores)} scoringIssue={aiReady ? null : "Choose a writing AI provider before starting a career review."} modelName={ai.model || "your configured AI model"} collectionIds={batch?.success ? batch.data.postingIds : undefined} invalidCollection={batch !== null && !batch.success} latestReview={latestReview ? { ...latestReview, result: linkedinReviewResult.safeParse(latestReview.result).data ?? null } : null} />}
+      jobs={<LinkedinWorkspace key={alert?.linkedinUrl} alert={alert} postings={linkedinPostings} {...reviewView} timeZone={timeZone} today={new Date().toISOString()} reviewLimit={Math.min(10, settings.agentMaxScores)} scoringIssue={aiReady ? null : "Choose a writing AI provider before starting a career review."} modelName={ai.model || "your configured AI model"} collectionIds={batch?.success ? batch.data.postingIds : undefined} invalidCollection={batch !== null && !batch.success} latestReview={latestReview ? { ...latestReview, result: linkedinReviewResult.safeParse(latestReview.result).data ?? null } : null} />}
       feed={<LinkedinConnections {...connection} section="feed" sources={studio.sources.filter((source) => source.kind !== "NEWS" && source.kind !== "MESSAGE")} />}
       messages={<LinkedinConnections {...connection} section="messages" sources={studio.sources.filter((source) => source.kind === "MESSAGE")} />}
       publishing={<LinkedinConnections {...connection} section="publishing" sources={[]} />}

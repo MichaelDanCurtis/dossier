@@ -43,6 +43,9 @@ export async function register() {
     const { startCompanyBoardSchedule } = await import("@/lib/company-boards/schedule");
     startCompanyBoardSchedule();
 
+    const { startAlertSchedule } = await import("@/lib/job-alerts/monitor");
+    startAlertSchedule();
+
     // Optional private career check-ins; off until enabled in Career.
     const { startCareerSchedule } = await import("@/lib/career/schedule");
     startCareerSchedule();
